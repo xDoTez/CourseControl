@@ -9,6 +9,6 @@ edition = "2021"
 serde="1.0.190"
 tokio="1.33.0"
 rocket={ git = "https://github.com/SergioBenitez/Rocket", rev = "07fe797", features = ["json"]}
-sqlx={verion = "0.7.2", features = ["postgres", "runtime-tokio-rustls"]}
+sqlx={version = "0.7.2", features = ["postgres", "runtime-tokio-rustls"]}
 dotenv="0.15.0"
 
