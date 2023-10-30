@@ -116,6 +116,7 @@ dependencies = [
  "rocket",
  "serde",
  "sqlx",
+ "tokio",
 ]
 
 [[package]]

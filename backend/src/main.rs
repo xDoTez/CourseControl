@@ -1,5 +1,7 @@
 #[macro_use] extern crate rocket;
 
+mod test;
+
 use std::env;
 use std::fmt::Display;
 use dotenv::dotenv;
