@@ -23,7 +23,7 @@ jobs:
         toolchain: stable
 
     - name: Build code
-      run:
+      run: |
         cd backend
         cargo build
     
