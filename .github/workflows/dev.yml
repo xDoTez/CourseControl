@@ -73,4 +73,4 @@ jobs:
           export POSTGRES_PASSWORD='${{ secrets.POSTGRES_PASSWORD }}'
           docker-compose down
           docker-compose pull
-          docker-compose up -d
+          docker-compose up
