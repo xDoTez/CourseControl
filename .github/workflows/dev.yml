@@ -70,7 +70,7 @@ jobs:
         password: ${{ secrets.DROPLET_PASSWORD }}
         script: |
           cd ~
-          export POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          export POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
           docker-compose down
           docker-compose pull
           docker-compose up -d
