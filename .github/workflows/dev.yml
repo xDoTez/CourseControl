@@ -24,7 +24,7 @@ jobs:
 
     - name: Build code
       run:
-        cd backed
+        cd backend
         cargo build
     
     - name: Set up Docker Buildx
