@@ -8,6 +8,8 @@ on:
 env:
     SQLX_OFFLINE: true
     POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+    DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+    DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
 jobs:
   build:
@@ -47,8 +49,8 @@ jobs:
     - name: Log in to Docker Hub
       uses: docker/login-actions@v3
       with:
-        username: ${{ secrets.DOCKER_USERNAME}}
-        password: ${{ secrets.DOCKER_PASSWORD}}
+        username: ${{ env.DOCKER_USERNAME }}
+        password: ${{ env.DOCKER_PASSWORD }}
     
     - name: Install sshpass
       run: sudo apt-get install sshpass
