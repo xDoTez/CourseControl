@@ -27,7 +27,7 @@ jobs:
         cargo build
     
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-actions@v2
+      uses: docker/setup-buildx-actions@v3
     
     - name: Build and push Docker images
       uses: docker/bake-action@v2.3.0
