@@ -2,7 +2,7 @@ FROM rust:latest
 ENV SQLX_OFFLINE=true
 
 WORKDIR /app
-COPY . .
+COPY /backend .
 
 RUN cargo build --release
 EXPOSE 8000
