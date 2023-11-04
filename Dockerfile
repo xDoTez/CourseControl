@@ -1,12 +1,9 @@
-FROM messense/rust-musl-cross:x86_64-musl as builder
+FROM rust:latest
 ENV SQLX_OFFLINE=true
 
 WORKDIR /api-backend
 COPY /backend .
-# Generate info for caching dependencies
-RUN cargo build --release --target x86_64-unknown-linux-musl
 
-FROM scratch
-COPY --from=builder /api-backend/target/x86_64-unknown-linux-musl/release/api-backend /api-backend
-ENTRYPOINT ["/api-backend"]
+RUN cargo build --release
 EXPOSE 8000
+CMD cargo run
