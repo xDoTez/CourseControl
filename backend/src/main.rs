@@ -3,37 +3,13 @@
 mod test;
 
 use std::env;
-use std::fmt::Display;
 use dotenv::dotenv;
-use sqlx::{FromRow, Connection};
+use sqlx::{Connection, Row};
 
-use rocket::serde::Serialize;
 use rocket::serde::json::Json;
 
-
-#[derive(FromRow, Serialize)]
-struct User
-{
-    id: Option<i32>,
-    #[sqlx(rename = "userName")]
-    username: String,
-    password: String,
-    email: String
-}
-
-impl Display for User
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self.id
-        {
-            Some(id) => write!(f, "Username: {}\nEmail: {}\nPassword: {}\nId: {}", self.username, self.email, self.password, id),
-            None => write!(f, "Username: {}\nEmail: {}\nPassword: {}", self.username, self.email, self.password)
-        }
-    }
-}
-
 #[get("/")]
-async fn read() -> Json<Result<User, String>>
+async fn status() -> Json<Result<String, String>>
 {
     dotenv().ok();
     let database_url = match env::var("DATABASE_URL")
@@ -48,7 +24,7 @@ async fn read() -> Json<Result<User, String>>
         Err(error) => return Json(Err(format!("{}", error)))
     };
 
-    let user: User = match sqlx::query_as("SELECT * FROM Public.\"Users\"")
+    let row_result = match sqlx::query("SELECT 1 + 1")
         .fetch_one(&mut connection)
         .await
     {
@@ -56,10 +32,16 @@ async fn read() -> Json<Result<User, String>>
         Err(error) => return Json(Err(format!("{}", error)))
     };
 
-    Json(Ok(user))
+    let _result: i32 = match row_result.try_get("?column?")
+    {
+        Ok(value) => value,
+        Err(error) => return Json(Err(format!("{}", error)))
+    };
+
+    Json(Ok(format!("Server is operational")))
 }
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/", routes![read])
+    rocket::build().mount("/", routes![status])
 }
