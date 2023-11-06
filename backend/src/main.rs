@@ -2,26 +2,20 @@
 
 mod test;
 
-use std::env;
-use dotenv::dotenv;
-use sqlx::{Connection, Row};
+mod users;
+mod database;
+
+use sqlx::Row;
 
 use rocket::serde::json::Json;
 
 #[get("/")]
 async fn status() -> Json<Result<String, String>>
 {
-    dotenv().ok();
-    let database_url = match env::var("DATABASE_URL")
-    {
-        Ok(url) => url,
-        Err(error) => return Json(Err(format!("{}", error)))
-    };
-
-    let mut connection = match sqlx::postgres::PgConnection::connect(&database_url).await
+    let mut connection = match database::establish_connection_to_database().await
     {
         Ok(con) => con,
-        Err(error) => return Json(Err(format!("{}", error)))
+        Err(error) => return Json(Err(error))
     };
 
     let row_result = match sqlx::query("SELECT 1 + 1")
@@ -41,7 +35,14 @@ async fn status() -> Json<Result<String, String>>
     Json(Ok(format!("Server is operational")))
 }
 
+#[get("/<id>")]
+async fn get_user_by_id(id: i32) -> Json<Result<users::User, String>>
+{
+    Json(users::User::get_user_by_id(id).await)
+}
+
 #[launch]
 fn rocket() -> _ {
     rocket::build().mount("/", routes![status])
+        .mount("/users/", routes![get_user_by_id])
 }
