@@ -1,8 +1,11 @@
+use rocket::outcome;
 use serde::{Serialize, Deserialize};
 use sqlx::FromRow;
 use chrono::NaiveDateTime;
+use regex::Regex;
 
 use crate::database;
+use crate::regex_checks;
 
 #[derive(FromRow, Debug, Serialize, Deserialize)]
 pub struct User
@@ -12,6 +15,17 @@ pub struct User
     password: String,
     email: String,
     datetime_of_creation: NaiveDateTime
+}
+
+pub enum UserRegistrationResult
+{
+    SuccessfulRegistration,
+    UsernameInvalid,
+    UsernameDuplicate,
+    EmailInvalid,
+    EmailDuplicate,
+    PasswordInvalid,
+    RegexInitializationError(String)
 }
 
 impl User
@@ -35,5 +49,21 @@ impl User
         Ok(user)
     }
 
-    // async fn insert_user_by_id(username: )
+    // username regex: "([A-z,0-9]{6,})\w+"
+    // password regex: "^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$"
+    // email regex: "^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$"
+    async fn insert_user_by_id(username: String, password: String, email: String) -> UserRegistrationResult
+    {
+        match regex_checks::perform_regex_check(r"([A-z,0-9]{6,})\w+", &username)
+        {
+            Ok(outcome) => match outcome
+            {
+                true => (),
+                false => return UserRegistrationResult::UsernameInvalid
+            }
+            Err(error) => return UserRegistrationResult::RegexInitializationError(format!("{}", error))
+        };
+        // implement regex checks for user name and password
+        todo!();
+    }
 }

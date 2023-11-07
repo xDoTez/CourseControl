@@ -4,6 +4,7 @@ mod test;
 
 mod users;
 mod database;
+mod regex_checks;
 
 use sqlx::Row;
 
