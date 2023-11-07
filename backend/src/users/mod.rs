@@ -1,6 +1,9 @@
 use serde::{Serialize, Deserialize};
 use sqlx::{FromRow, PgConnection};
-use chrono::NaiveDateTime;
+use chrono::{NaiveDateTime, Local};
+use std::collections::hash_map::DefaultHasher;
+use std::fmt::Display;
+use std::hash::{Hash, Hasher};
 
 use crate::database;
 use crate::regex_checks;
@@ -39,7 +42,7 @@ pub enum UserRegistrationResult
     RegexInitializationError(String)
 }
 
-impl User
+impl User // impl block for misc routes
 {
     pub async fn get_user_by_id(id: i32) -> Result<User, String>
     {
@@ -59,7 +62,10 @@ impl User
 
         Ok(user)
     }
+}
 
+impl User // impl block for user registration
+{
     pub async fn register_user(user_credentials: UserCredentials) -> UserRegistrationResult
     {
         let mut connection =  match database::establish_connection_to_database().await
@@ -85,8 +91,20 @@ impl User
             UserRegistrationResult::EmailUnique => (),
             other_result => return other_result
         }
-        
-        UserRegistrationResult::SuccessfulRegistration
+
+        let datetime_of_creation = Local::now().naive_local();
+        let hashed_password = User::salt_and_hash_string(&user_credentials.password, &datetime_of_creation);
+
+        match sqlx::query("INSERT INTO users (username, password, email, datetime_of_creation) VALUES ($1, $2, $3, $4)")
+            .bind(&user_credentials.username)
+            .bind(&hashed_password)
+            .bind(&user_credentials.email)
+            .bind(&datetime_of_creation)
+            .execute(&mut connection).await
+        {
+            Ok(_) => UserRegistrationResult::SuccessfulRegistration,
+            Err(error) => UserRegistrationResult::DatabaseError(format!("{}", error))
+        }
     }
 
     fn check_validity_of_user_credentials(user_credentials: &UserCredentials) -> UserRegistrationResult
@@ -127,7 +145,8 @@ impl User
         #[derive(FromRow)]
         struct Username
         {
-            username: String
+            #[sqlx(rename = "username")]
+            _username: String
         }
         
         let username_email_rows: Vec<Username> = match sqlx::query_as("SELECT username FROM users WHERE username = $1")
@@ -151,7 +170,8 @@ impl User
         #[derive(FromRow)]
         struct Email
         {
-            email: String
+            #[sqlx(rename = "email")]
+            _email: String
         }
         
         let username_email_rows: Vec<Email> = match sqlx::query_as("SELECT email FROM users WHERE email = $1")
@@ -168,5 +188,14 @@ impl User
             0 => UserRegistrationResult::EmailUnique,
             _ => UserRegistrationResult::EmailDuplicate
         }
+    }
+
+    fn salt_and_hash_string<T: Display>(text: &str, salt: &T) -> String // TODO finish this
+    {
+        let salted_text = format!("{}{}", text, salt);
+        let mut hasher = DefaultHasher::new();
+
+        salted_text.hash(&mut hasher);
+        hasher.finish().to_string()
     }
 }
