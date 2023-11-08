@@ -64,7 +64,7 @@ impl User // impl block for misc routes
     }
 }
 
-impl User // impl block for user registration
+impl User // impl block for user registrations
 {
     pub async fn register_user(user_credentials: UserCredentials) -> UserRegistrationResult
     {
