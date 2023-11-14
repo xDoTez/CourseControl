@@ -2,7 +2,7 @@ use serde::{Serialize, Deserialize};
 use sqlx::{FromRow, PgConnection};
 use chrono::{NaiveDateTime, Local};
 use std::collections::hash_map::DefaultHasher;
-use std::fmt::Display;
+use std::fmt::{Display, Debug};
 use std::hash::{Hash, Hasher};
 
 use crate::database;
@@ -16,6 +16,28 @@ pub struct User
     password: String,
     email: String,
     datetime_of_creation: Option<NaiveDateTime>
+}
+
+impl User // impl block for misc routes
+{
+    pub async fn get_user_by_id(id: i32) -> Result<User, String>
+    {
+        let mut connection =  match database::establish_connection_to_database().await
+        {
+            Ok(database_url) => database_url,
+            Err(error) => return Err(format!("Error while fetching database URL from environment: {}", error))
+        };
+
+        let user: User = match sqlx::query_as("SELECT * FROM users WHERE ID = $1").bind(id)
+            .fetch_one(&mut connection)
+            .await
+        {
+            Ok(results) => results,
+            Err(error) => return Err(format!("Error while fetching user from database: {}", error))
+        };
+
+        Ok(user)
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -40,28 +62,6 @@ pub enum UserRegistrationResult
     CredentialsValid,
     DatabaseError(String),
     RegexInitializationError(String)
-}
-
-impl User // impl block for misc routes
-{
-    pub async fn get_user_by_id(id: i32) -> Result<User, String>
-    {
-        let mut connection =  match database::establish_connection_to_database().await
-        {
-            Ok(database_url) => database_url,
-            Err(error) => return Err(format!("Error while fetching database URL from environment: {}", error))
-        };
-
-        let user: User = match sqlx::query_as("SELECT * FROM users WHERE ID = $1").bind(id)
-            .fetch_one(&mut connection)
-            .await
-        {
-            Ok(results) => results,
-            Err(error) => return Err(format!("Error while fetching user from database: {}", error))
-        };
-
-        Ok(user)
-    }
 }
 
 impl User // impl block for user registrations
@@ -190,12 +190,79 @@ impl User // impl block for user registrations
         }
     }
 
-    fn salt_and_hash_string<T: Display>(text: &str, salt: &T) -> String // TODO finish this
+    fn salt_and_hash_string<T: Display>(text: &str, salt: &T) -> String
     {
         let salted_text = format!("{}{}", text, salt);
         let mut hasher = DefaultHasher::new();
 
         salted_text.hash(&mut hasher);
         hasher.finish().to_string()
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct UserLoginCredentials
+{
+    username: String,
+    password: String
+}
+
+#[derive(Serialize)]
+pub enum UserLoginResult
+{
+    SuccessfulLogin,
+    InvalidCredentials,
+    FailedToFindSalt,
+    DataBaseError(String)
+}
+
+impl User // impl block for user login
+{
+    pub async fn login_user(user_login_credentials: UserLoginCredentials) -> UserLoginResult
+    {
+        let mut connection =  match database::establish_connection_to_database().await
+        {
+            Ok(database_url) => database_url,
+            Err(error) => return UserLoginResult::DataBaseError(format!("Error while fetching database URL from environment: {}", error))
+        };
+
+        let mut users = match User::get_user_by_username(&user_login_credentials.username, &mut connection).await
+        {
+            Ok(result) => result,
+            Err(error) => return UserLoginResult::DataBaseError(format!("{}", error))
+        };
+
+        let user = match users.iter().count()
+        {
+            1 => users.remove(0),
+            _ => {println!("No or more than one user with this username were found"); return UserLoginResult::InvalidCredentials}
+        };
+
+        let password_hashes_match = match user.datetime_of_creation
+        {
+            Some(creation_datetime) => user.password.chars()
+                .zip(User::salt_and_hash_string(&user_login_credentials.password, &creation_datetime).chars())
+                .map(|(x, y)| x == y).filter(|x| !x).count() == 0,
+            None => return UserLoginResult::FailedToFindSalt
+        };
+
+        match password_hashes_match
+        {
+            true => UserLoginResult::SuccessfulLogin,
+            false => UserLoginResult::InvalidCredentials
+        }
+    }
+
+    async fn get_user_by_username(username: &str, connection: &mut PgConnection) -> Result<Vec<User>, String>
+    {
+        let users: Vec<User> = match sqlx::query_as("SELECT * FROM users WHERE username = $1").bind(username)
+            .fetch_all(connection)
+            .await
+        {
+            Ok(result) => result,
+            Err(error) => return Err(format!("Error while fetching user from database: {}", error))
+        };
+
+        Ok(users)
     }
 }
