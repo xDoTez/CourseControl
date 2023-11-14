@@ -50,8 +50,16 @@ async fn register_user(user_credentials: Json<users::UserCredentials>) -> Json<u
     Json(users::User::register_user(user_credentials).await)
 }
 
+#[post("/login", format = "json", data = "<user_login_credentials>")]
+async fn login_user(user_login_credentials: Json<users::UserLoginCredentials>) -> Json<users::UserLoginResult>
+{
+    let user_login_credentials = user_login_credentials.into_inner();
+
+    Json(users::User::login_user(user_login_credentials).await)
+}
+
 #[launch]
 fn rocket() -> _ {
     rocket::build().mount("/", routes![status])
-        .mount("/users/", routes![get_user_by_id, register_user])
+        .mount("/users/", routes![get_user_by_id, register_user, login_user])
 }
