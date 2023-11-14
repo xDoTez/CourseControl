@@ -1,9 +1,10 @@
 use serde::{Serialize, Deserialize};
 use sqlx::{FromRow, PgConnection};
-use chrono::{NaiveDateTime, Local};
+use chrono::{NaiveDateTime, Local, Duration};
 use std::collections::hash_map::DefaultHasher;
 use std::fmt::{Display, Debug};
 use std::hash::{Hash, Hasher};
+use rand::Rng;
 
 use crate::database;
 use crate::regex_checks;
@@ -210,10 +211,27 @@ pub struct UserLoginCredentials
 #[derive(Serialize)]
 pub enum UserLoginResult
 {
-    SuccessfulLogin,
+    SuccessfulLogin(SessionToken),
     InvalidCredentials,
-    FailedToFindSalt,
+    MissingData,
     DataBaseError(String)
+}
+
+#[derive(FromRow, Serialize)]
+pub struct SessionToken
+{
+    user: i32,
+    session_token: String,
+    expiration: NaiveDateTime
+}
+
+impl SessionToken
+{
+    pub fn new(user_id: i32) -> Self
+    {
+        let token: u64 = rand::thread_rng().gen();
+        SessionToken { user: user_id, session_token: token.to_string(), expiration: Local::now().naive_local() + Duration::hours(1) }
+    }
 }
 
 impl User // impl block for user login
@@ -243,12 +261,12 @@ impl User // impl block for user login
             Some(creation_datetime) => user.password.chars()
                 .zip(User::salt_and_hash_string(&user_login_credentials.password, &creation_datetime).chars())
                 .map(|(x, y)| x == y).filter(|x| !x).count() == 0,
-            None => return UserLoginResult::FailedToFindSalt
+            None => return UserLoginResult::MissingData
         };
 
         match password_hashes_match
         {
-            true => UserLoginResult::SuccessfulLogin,
+            true => User::create_session_token(user, &mut connection).await,
             false => UserLoginResult::InvalidCredentials
         }
     }
@@ -265,4 +283,23 @@ impl User // impl block for user login
 
         Ok(users)
     }
+
+    async fn create_session_token(user: User, connection: &mut PgConnection) -> UserLoginResult
+    {
+        let session_token = match user.id
+        {
+            Some(id) => SessionToken::new(id),
+            None => return UserLoginResult::MissingData
+        };
+
+        match sqlx::query("INSERT INTO sessions (\"user\", session_token, expiration) VALUES ($1, $2, $3)")
+            .bind(&session_token.user)
+            .bind(&session_token.session_token)
+            .bind(&session_token.expiration)
+            .execute(connection).await
+        {
+            Ok(_) => UserLoginResult::SuccessfulLogin(session_token),
+            Err(error) => UserLoginResult::DataBaseError(format!("{}", error))
+        }
+    } 
 }
