@@ -3,6 +3,7 @@
 mod test;
 
 mod users;
+mod courses;
 mod database;
 mod regex_checks;
 
