@@ -39,6 +39,15 @@ impl User // impl block for misc routes
 
         Ok(user)
     }
+
+    fn salt_and_hash_string<T: Display>(text: &str, salt: &T) -> String
+    {
+        let salted_text = format!("{}{}", text, salt);
+        let mut hasher = DefaultHasher::new();
+
+        salted_text.hash(&mut hasher);
+        hasher.finish().to_string()
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -189,15 +198,6 @@ impl User // impl block for user registrations
             0 => UserRegistrationResult::EmailUnique,
             _ => UserRegistrationResult::EmailDuplicate
         }
-    }
-
-    fn salt_and_hash_string<T: Display>(text: &str, salt: &T) -> String
-    {
-        let salted_text = format!("{}{}", text, salt);
-        let mut hasher = DefaultHasher::new();
-
-        salted_text.hash(&mut hasher);
-        hasher.finish().to_string()
     }
 }
 
