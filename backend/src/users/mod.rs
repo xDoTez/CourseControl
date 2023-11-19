@@ -61,8 +61,8 @@ pub enum UserRegistrationResult
     EmailDuplicate,
     PasswordInvalid,
     CredentialsValid,
-    DatabaseError(String),
-    RegexInitializationError(String)
+    DatabaseError,
+    RegexInitializationError
 }
 
 impl User // impl block for user registrations
@@ -72,7 +72,7 @@ impl User // impl block for user registrations
         let mut connection =  match database::establish_connection_to_database().await
         {
             Ok(database_url) => database_url,
-            Err(error) => return UserRegistrationResult::DatabaseError(error)
+            Err(_) => return UserRegistrationResult::DatabaseError
         };
 
         match User::check_validity_of_user_credentials(&user_credentials)
@@ -104,7 +104,7 @@ impl User // impl block for user registrations
             .execute(&mut connection).await
         {
             Ok(_) => UserRegistrationResult::SuccessfulRegistration,
-            Err(error) => UserRegistrationResult::DatabaseError(format!("{}", error))
+            Err(_) => UserRegistrationResult::DatabaseError
         }
     }
 
@@ -117,7 +117,7 @@ impl User // impl block for user registrations
                 true => (),
                 false => return UserRegistrationResult::UsernameInvalid
             }
-            Err(error) => return UserRegistrationResult::RegexInitializationError(format!("{}", error))
+            Err(_) => return UserRegistrationResult::RegexInitializationError
         };
         match regex_checks::perform_regex_check(r"^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$", &user_credentials.password)
         {
@@ -126,7 +126,7 @@ impl User // impl block for user registrations
                 true => (),
                 false => return UserRegistrationResult::PasswordInvalid
             }
-            Err(error) => return UserRegistrationResult::RegexInitializationError(format!("{}", error))
+            Err(_) => return UserRegistrationResult::RegexInitializationError
         };
         match regex_checks::perform_regex_check(r"^[^@]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$", &user_credentials.email)
         {
@@ -135,7 +135,7 @@ impl User // impl block for user registrations
                 true => (),
                 false => return UserRegistrationResult::EmailInvalid
             }
-            Err(error) => return UserRegistrationResult::RegexInitializationError(format!("{}", error))
+            Err(_) => return UserRegistrationResult::RegexInitializationError
         };
 
         UserRegistrationResult::CredentialsValid
@@ -156,7 +156,7 @@ impl User // impl block for user registrations
             .await
         {
             Ok(results) => results,
-            Err(error) => return UserRegistrationResult::DatabaseError(format!("{}", error))
+            Err(_) => return UserRegistrationResult::DatabaseError
         };
 
         match username_email_rows.iter().count()
@@ -181,7 +181,7 @@ impl User // impl block for user registrations
             .await
         {
             Ok(results) => results,
-            Err(error) => return UserRegistrationResult::DatabaseError(format!("{}", error))
+            Err(_) => return UserRegistrationResult::DatabaseError
         };
 
         match username_email_rows.iter().count()
