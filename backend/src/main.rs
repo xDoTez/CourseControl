@@ -56,12 +56,18 @@ async fn register_user(user_credentials: Json<users::UserCredentials>) -> Json<U
     Json(UserRegistrationResult{ status: users::User::register_user(user_credentials).await})
 }
 
+#[derive(Serialize)]
+struct UserLoginResult
+{
+    status: users::UserLoginResult
+}
+
 #[post("/login", format = "json", data = "<user_login_credentials>")]
-async fn login_user(user_login_credentials: Json<users::UserLoginCredentials>) -> Json<users::UserLoginResult>
+async fn login_user(user_login_credentials: Json<users::UserLoginCredentials>) -> Json<UserLoginResult>
 {
     let user_login_credentials = user_login_credentials.into_inner();
 
-    Json(users::User::login_user(user_login_credentials).await)
+    Json(UserLoginResult{ status: users::User::login_user(user_login_credentials).await})
 }
 
 #[launch]
