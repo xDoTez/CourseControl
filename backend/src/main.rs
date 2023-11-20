@@ -10,7 +10,7 @@ mod session_token;
 
 use sqlx::Row;
 
-use rocket::serde::json::Json;
+use rocket::serde::{json::Json, Serialize};
 
 #[get("/")]
 async fn status() -> Json<Result<String, String>>
@@ -60,8 +60,28 @@ async fn login_user(user_login_credentials: Json<users::UserLoginCredentials>) -
     Json(users::User::login_user(user_login_credentials).await)
 }
 
+#[derive(Serialize)]
+struct ResponseMessage
+{
+    response: String,
+}
+
+
+#[post("/course_data/", format = "json", data = "<session_token>")]
+async fn get_course_data(session_token: Json<session_token::SessionToken>) -> Json<Result<courses::UserCourse, ResponseMessage>>
+{
+    let session_token: session_token::SessionToken = session_token.into_inner();
+
+    Json(match courses::get_all_course_for_user(session_token).await
+        {
+            Ok(user_course) => Ok(user_course),
+            Err(error) => Err(ResponseMessage{ response: error})
+        })
+}
+
 #[launch]
 fn rocket() -> _ {
     rocket::build().mount("/", routes![status])
         .mount("/users/", routes![get_user_by_id, register_user, login_user])
+        .mount("/something/", routes![get_course_data])
 }

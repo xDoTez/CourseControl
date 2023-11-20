@@ -1,3 +1,7 @@
+use rocket::serde::Serialize;
+use crate::database;
+use crate::session_token;
+
 struct Program
 {
     id: Option<i32>,
@@ -30,6 +34,7 @@ struct Subcategory
     requirement: i32
 }
 
+#[derive(Serialize)]
 pub struct UserCourse
 {
     id: Option<i32>,
@@ -39,6 +44,7 @@ pub struct UserCourse
     is_active: bool
 }
 
+#[derive(Serialize)]
 pub struct CourseCategory
 {
     id: Option<i32>,
@@ -48,6 +54,7 @@ pub struct CourseCategory
     subcategories: Option<Vec<CategorySubcategory>>
 }
 
+#[derive(Serialize)]
 pub struct CategorySubcategory
 {
     user_course_category_id: i32,
@@ -55,8 +62,20 @@ pub struct CategorySubcategory
     points: i32
 }
 
-pub fn get_all_course_for_user(user_id: i32) -> UserCourse
+pub async fn get_all_course_for_user(session_token: session_token::SessionToken) -> Result<UserCourse, String>
 {
-    let user_course_data: UserCourse;
-    todo!();
+    let mut connection = match database::establish_connection_to_database().await
+        {
+            Ok(con) => con,
+            Err(error) => return Err(format!("{}", error))
+        };
+    // check if the session token is valid
+    match session_token.validate_token(&mut connection).await
+    {
+        Ok(_) => {},
+        Err(error) => return Err(format!("{}", error))
+    };
+    // get all active user course data
+    // get all course data relevant to use
+    Ok(UserCourse { id: None, user_id: 1, course_id: 1, categories: None, is_active: true })
 }
