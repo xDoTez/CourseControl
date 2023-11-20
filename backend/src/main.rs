@@ -6,6 +6,7 @@ mod users;
 mod courses;
 mod database;
 mod regex_checks;
+mod session_token;
 
 use sqlx::Row;
 

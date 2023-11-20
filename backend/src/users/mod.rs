@@ -1,13 +1,13 @@
 use serde::{Serialize, Deserialize};
 use sqlx::{FromRow, PgConnection};
-use chrono::{NaiveDateTime, Local, Duration};
+use chrono::{NaiveDateTime, Local};
 use std::collections::hash_map::DefaultHasher;
 use std::fmt::{Display, Debug};
 use std::hash::{Hash, Hasher};
-use rand::Rng;
 
 use crate::database;
 use crate::regex_checks;
+use crate::session_token;
 
 #[derive(FromRow, Debug, Serialize, Deserialize)]
 pub struct User
@@ -211,27 +211,10 @@ pub struct UserLoginCredentials
 #[derive(Serialize)]
 pub enum UserLoginResult
 {
-    SuccessfulLogin(SessionToken),
+    SuccessfulLogin(session_token::SessionToken),
     InvalidCredentials,
     MissingData,
     DataBaseError(String)
-}
-
-#[derive(FromRow, Serialize)]
-pub struct SessionToken
-{
-    user: i32,
-    session_token: String,
-    expiration: NaiveDateTime
-}
-
-impl SessionToken
-{
-    pub fn new(user_id: i32) -> Self
-    {
-        let token: u64 = rand::thread_rng().gen();
-        SessionToken { user: user_id, session_token: token.to_string(), expiration: Local::now().naive_local() + Duration::hours(1) }
-    }
 }
 
 impl User // impl block for user login
@@ -288,7 +271,7 @@ impl User // impl block for user login
     {
         let session_token = match user.id
         {
-            Some(id) => SessionToken::new(id),
+            Some(id) => session_token::SessionToken::new(id),
             None => return UserLoginResult::MissingData
         };
 
