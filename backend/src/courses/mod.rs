@@ -7,7 +7,6 @@ struct Program
 struct Course
 {
     id: Option<i32>,
-    program_id: i32,
     name: String,
     semester: i32,
     ects: i32,
@@ -31,24 +30,25 @@ struct Subcategory
     requirement: i32
 }
 
-struct UserCourse
+pub struct UserCourse
 {
     id: Option<i32>,
     user_id: i32,
     course_id: i32,
-    categories: Option<Vec<UserCourseCategory>>
+    categories: Option<Vec<CourseCategory>>,
+    is_active: bool
 }
 
-struct UserCourseCategory
+pub struct CourseCategory
 {
     id: Option<i32>,
     user_course_id: i32,
     category_id: i32,
-    points: Option<i32>,
-    subcategories: Option<Vec<UserCourseCategorySubcategory>>
+    points: i32,
+    subcategories: Option<Vec<CategorySubcategory>>
 }
 
-struct UserCourseCategorySubcategory
+pub struct CategorySubcategory
 {
     user_course_category_id: i32,
     subcategory_id: i32,
