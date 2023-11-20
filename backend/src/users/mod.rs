@@ -12,7 +12,7 @@ use crate::session_token;
 #[derive(FromRow, Debug, Serialize, Deserialize)]
 pub struct User
 {
-    id: Option<i32>,
+    pub id: Option<i32>,
     username: String,
     password: String,
     email: String,
@@ -249,7 +249,7 @@ impl User // impl block for user login
 
         match password_hashes_match
         {
-            true => User::create_session_token(user, &mut connection).await,
+            true => session_token::SessionToken::create_session_token(user, &mut connection).await,
             false => UserLoginResult::InvalidCredentials
         }
     }
@@ -266,23 +266,4 @@ impl User // impl block for user login
 
         Ok(users)
     }
-
-    async fn create_session_token(user: User, connection: &mut PgConnection) -> UserLoginResult
-    {
-        let session_token = match user.id
-        {
-            Some(id) => session_token::SessionToken::new(id),
-            None => return UserLoginResult::MissingData
-        };
-
-        match sqlx::query("INSERT INTO sessions (\"user\", session_token, expiration) VALUES ($1, $2, $3)")
-            .bind(&session_token.user)
-            .bind(&session_token.session_token)
-            .bind(&session_token.expiration)
-            .execute(connection).await
-        {
-            Ok(_) => UserLoginResult::SuccessfulLogin(session_token),
-            Err(error) => UserLoginResult::DataBaseError(format!("{}", error))
-        }
-    } 
 }
