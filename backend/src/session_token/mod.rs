@@ -22,9 +22,10 @@ impl SessionToken
 
     pub async fn validate_token(&self, connecting: &mut PgConnection) -> Result<bool, String>
     {
-        match sqlx::query("SELECT * FROM sessions WHERE 'user' = $1 AND session_token = $2")
+        match sqlx::query("SELECT * FROM sessions WHERE 'user' = $1 AND session_token = $2 AND expiration > $3")
             .bind(&self.user)
             .bind(&self.session_token)
+            .bind(Local::now().naive_local())
             .fetch_one(connecting).await
             {
                 Ok(_) => Ok(true),
