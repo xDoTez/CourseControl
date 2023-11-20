@@ -1,10 +1,10 @@
-use rocket::serde::Serialize;
+use rocket::serde::{Serialize, Deserialize};
 use sqlx::{FromRow, PgConnection};
 use chrono::{NaiveDateTime, Duration, Local};
 use rand::Rng;
 use crate::users::{User, UserLoginResult}; 
 
-#[derive(FromRow, Serialize)]
+#[derive(FromRow, Serialize, Deserialize)]
 pub struct SessionToken
 {
     pub user: i32,
@@ -22,7 +22,7 @@ impl SessionToken
 
     pub async fn validate_token(&self, connecting: &mut PgConnection) -> Result<bool, String>
     {
-        match sqlx::query("SELECT * FROM sessions WHERE 'user' = $1 AND session_token = $2 AND expiration > $3")
+        match sqlx::query("SELECT * FROM sessions WHERE \"user\" = $1 AND session_token = $2 AND expiration > $3")
             .bind(&self.user)
             .bind(&self.session_token)
             .bind(Local::now().naive_local())
