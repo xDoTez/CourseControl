@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">CourseControl</string>
+    <string name="profile">profile</string>
+    <string name="home">home</string>
+    <string name="settings">settings</string>
+    <string name="logout">logout</string>
 </resources>
