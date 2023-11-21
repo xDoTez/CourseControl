@@ -1,9 +1,11 @@
 mod courses;
-use courses::{UserCourse, get_user_course_data};
+mod categories;
+mod subcategories;
+
 use rocket::serde::Serialize;
-use sqlx::{FromRow, PgConnection};
 use crate::database;
 use crate::session_token;
+use itertools::iproduct;
 
 struct Program
 {
@@ -11,71 +13,62 @@ struct Program
     name: String,
 }
 
-struct Category
+#[derive(Serialize)]
+pub struct CourseData
 {
-    id: Option<i32>,
-    course_id: i32,
-    name: String,
-    points: i32,
-    requirement: i32
-}
-
-struct Subcategory
-{
-    id: Option<i32>,
-    category_id: i32,
-    name: String,
-    points: i32,
-    requirement: i32
-}
-
-#[derive(Serialize, FromRow)]
-pub struct CourseCategory
-{
-    id: Option<i32>,
-    user_course_id: i32,
-    category_id: i32,
-    points: i32,
+    course: courses::Course,
+    course_user_data: courses::UserCourse,
+    catoegoris: Option<Vec<CategoryData>>
 }
 
 #[derive(Serialize)]
-pub struct CategorySubcategory
+pub struct CategoryData
 {
-    user_course_category_id: i32,
-    subcategory_id: i32,
-    points: i32
+    category: categories::Category,
+    category_user_data: categories::CourseCategory,
+    subcategories: Vec<SubcategoryData>
 }
 
-pub async fn get_all_course_for_user(session_token: session_token::SessionToken, is_active: bool) -> Result<Vec<UserCourse>, String>
+#[derive(Serialize)]
+pub struct SubcategoryData
+{
+    subcategory: subcategories::Subcategory,
+    subcategory_user_data: subcategories::CategorySubcategory
+}
+
+pub async fn get_all_course_for_user(session_token: session_token::SessionToken, is_active: bool) -> Result<Vec<CourseData>, String>
 {
     let mut connection = match database::establish_connection_to_database().await
         {
             Ok(con) => con,
             Err(_) => return Err(format!("Session token invalid"))
         };
-    // check if the session token is valid
+
     match session_token.validate_token(&mut connection).await
         {
             Ok(_) => {},
             Err(error) => return Err(format!("{}", error))
         };
 
-    // get all active user course data
-
-    // get all course data relevant to use
-    get_user_course_data(session_token, is_active, &mut connection).await
-}
-
-async fn get_user_categories(user_course_id: Vec<i32>, connectio: &mut PgConnection) -> Result<Vec<CourseCategory>, String>
-{
-    let course_category: Vec<CourseCategory> = match sqlx::query_as("SELECT * FROM course_categories WHERE user_course_id = ANY($1)")
-        .bind(&user_course_id)
-        .fetch_all(connectio)
+    let courses_data = match courses::get_user_course_data(session_token, is_active, &mut connection)
         .await
-        {
-            Ok(c_c) => c_c,
-            Err(error) => return Err(format!("{}", error))
-        };
+    {
+        Ok(data) => data,
+        Err(error) => return Err(format!("{}", error))
+    };
 
-    Ok(course_category)
+    let course_ids: Vec<i32> = courses_data.iter().map(|x| x.course_id).collect();
+    let courses = match courses::get_courses(course_ids, &mut connection).await
+    {
+        Ok(courses) => courses,
+        Err(error) => return Err(format!("{}", error))
+    };
+
+    let mut results: Vec<CourseData> = Vec::new();
+    for (course_data, course) in iproduct!(courses_data, courses).filter(|(x, y)| match y.id { Some(id) => id == x.course_id, None => false })
+    {
+        results.push(CourseData { course: course, course_user_data: course_data, catoegoris: None });
+    }
+
+    Ok(results)
 }

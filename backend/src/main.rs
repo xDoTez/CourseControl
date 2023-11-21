@@ -68,7 +68,7 @@ struct ResponseMessage
 
 
 #[post("/course_data/", format = "json", data = "<session_token>")]
-async fn get_course_data(session_token: Json<session_token::SessionToken>) -> Json<Result<Vec<courses::UserCourse>, ResponseMessage>>
+async fn get_course_data(session_token: Json<session_token::SessionToken>) -> Json<Result<Vec<courses::CourseData>, ResponseMessage>>
 {
     let session_token: session_token::SessionToken = session_token.into_inner();
 
