@@ -1,3 +1,5 @@
+mod courses;
+use courses::{UserCourse, get_user_course_data};
 use rocket::serde::Serialize;
 use sqlx::{FromRow, PgConnection};
 use crate::database;
@@ -7,14 +9,6 @@ struct Program
 {
     id: Option<i32>,
     name: String,
-}
-
-struct Course
-{
-    id: Option<i32>,
-    name: String,
-    semester: i32,
-    ects: i32,
 }
 
 struct Category
@@ -36,15 +30,6 @@ struct Subcategory
 }
 
 #[derive(Serialize, FromRow)]
-pub struct UserCourse
-{
-    id: Option<i32>,
-    user_id: i32,
-    course_id: i32,
-    is_active: bool
-}
-
-#[derive(Serialize)]
 pub struct CourseCategory
 {
     id: Option<i32>,
@@ -81,17 +66,16 @@ pub async fn get_all_course_for_user(session_token: session_token::SessionToken,
     get_user_course_data(session_token, is_active, &mut connection).await
 }
 
-async fn get_user_course_data(session_token: session_token::SessionToken, is_active: bool, connection: &mut PgConnection) -> Result<Vec<UserCourse>, String>
+async fn get_user_categories(user_course_id: Vec<i32>, connectio: &mut PgConnection) -> Result<Vec<CourseCategory>, String>
 {
-    let user_course: Vec<UserCourse> = match sqlx::query_as("SELECT * FROM user_courses WHERE user_id = $1 AND is_active = $2")
-        .bind(&session_token.user)
-        .bind(&is_active)
-        .fetch_all(connection)
+    let course_category: Vec<CourseCategory> = match sqlx::query_as("SELECT * FROM course_categories WHERE user_course_id = ANY($1)")
+        .bind(&user_course_id)
+        .fetch_all(connectio)
         .await
-    {
-        Ok(data) => data,
-        Err(error) => return Err(format!("{}", error)) 
-    };
+        {
+            Ok(c_c) => c_c,
+            Err(error) => return Err(format!("{}", error))
+        };
 
-    Ok(user_course)
+    Ok(course_category)
 }
