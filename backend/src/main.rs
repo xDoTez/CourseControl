@@ -68,11 +68,11 @@ struct ResponseMessage
 
 
 #[post("/course_data/", format = "json", data = "<session_token>")]
-async fn get_course_data(session_token: Json<session_token::SessionToken>) -> Json<Result<courses::UserCourse, ResponseMessage>>
+async fn get_course_data(session_token: Json<session_token::SessionToken>) -> Json<Result<Vec<courses::UserCourse>, ResponseMessage>>
 {
     let session_token: session_token::SessionToken = session_token.into_inner();
 
-    Json(match courses::get_all_course_for_user(session_token).await
+    Json(match courses::get_all_course_for_user(session_token, true).await
         {
             Ok(user_course) => Ok(user_course),
             Err(error) => Err(ResponseMessage{ response: error})
@@ -83,5 +83,5 @@ async fn get_course_data(session_token: Json<session_token::SessionToken>) -> Js
 fn rocket() -> _ {
     rocket::build().mount("/", routes![status])
         .mount("/users/", routes![get_user_by_id, register_user, login_user])
-        .mount("/something/", routes![get_course_data])
+        .mount("/something", routes![get_course_data])
 }

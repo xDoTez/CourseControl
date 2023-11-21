@@ -1,4 +1,5 @@
 use rocket::serde::Serialize;
+use sqlx::{FromRow, PgConnection};
 use crate::database;
 use crate::session_token;
 
@@ -34,13 +35,12 @@ struct Subcategory
     requirement: i32
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, FromRow)]
 pub struct UserCourse
 {
     id: Option<i32>,
     user_id: i32,
     course_id: i32,
-    categories: Option<Vec<CourseCategory>>,
     is_active: bool
 }
 
@@ -51,7 +51,6 @@ pub struct CourseCategory
     user_course_id: i32,
     category_id: i32,
     points: i32,
-    subcategories: Option<Vec<CategorySubcategory>>
 }
 
 #[derive(Serialize)]
@@ -62,20 +61,36 @@ pub struct CategorySubcategory
     points: i32
 }
 
-pub async fn get_all_course_for_user(session_token: session_token::SessionToken) -> Result<UserCourse, String>
+pub async fn get_all_course_for_user(session_token: session_token::SessionToken, is_active: bool) -> Result<Vec<UserCourse>, String>
 {
     let mut connection = match database::establish_connection_to_database().await
         {
             Ok(con) => con,
-            Err(error) => return Err(format!("{}", error))
+            Err(_) => return Err(format!("Session token invalid"))
         };
     // check if the session token is valid
     match session_token.validate_token(&mut connection).await
-    {
-        Ok(_) => {},
-        Err(error) => return Err(format!("{}", error))
-    };
+        {
+            Ok(_) => {},
+            Err(error) => return Err(format!("{}", error))
+        };
+
     // get all active user course data
+
     // get all course data relevant to use
-    Ok(UserCourse { id: None, user_id: 1, course_id: 1, categories: None, is_active: true })
+    get_user_course_data(session_token, is_active, &mut connection).await
+}
+
+async fn get_user_course_data(session_token: session_token::SessionToken, is_active: bool, connection: &mut PgConnection) -> Result<Vec<UserCourse>, String>
+{
+    let user_course: Vec<UserCourse> = match sqlx::query_as("SELECT * FROM user_courses WHERE user_id = $1")
+        .bind(&session_token.user)
+        .fetch_all(connection)
+        .await
+    {
+        Ok(data) => data,
+        Err(error) => return Err(format!("{}", error)) 
+    };
+
+    Ok(user_course)
 }
