@@ -1,6 +1,7 @@
 package com.example.coursecontrol
 
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
@@ -18,10 +19,11 @@ class RegistrationActivity : MainActivity(){
     private lateinit var etUsername: EditText
     private lateinit var etEmail: EditText
     private lateinit var etPassword: EditText
+    private lateinit var etConfirmPassword : EditText
     private lateinit var btnRegister: Button
 
     private val retrofit = Retrofit.Builder()
-        .baseUrl("http://165.232.76.112:8000/users/registration") //
+        .baseUrl("http://165.232.76.112:8000/users/") //
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
@@ -34,9 +36,11 @@ class RegistrationActivity : MainActivity(){
         etUsername = findViewById(R.id.etUsername)
         etEmail = findViewById(R.id.etEmail)
         etPassword = findViewById(R.id.etPassword)
+        etConfirmPassword = findViewById(R.id.etConfirmPassword)
         btnRegister = findViewById(R.id.btnRegister)
 
         btnRegister.setOnClickListener {
+            Log.d("RegistrationActivity", "Button clicked")
             this.registerUser()
         }
     }
@@ -45,8 +49,15 @@ class RegistrationActivity : MainActivity(){
         val username = etUsername.text.toString()
         val email = etEmail.text.toString()
         val password = etPassword.text.toString()
+        val confirmPassword = etConfirmPassword.text.toString()
 
-        val registrationBody = RegistrationBody(name, username, email, password)
+        if (password != confirmPassword) {
+            Toast.makeText(this@RegistrationActivity, "Lozinke se ne podudaraju", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val registrationBody = RegistrationBody(username, email, password)
+
+        Log.d("RegistrationActivity", "Trying to register user: $registrationBody")
 
         val call = apiService.registerUser(registrationBody)
 

@@ -96,7 +96,9 @@
             android:backgroundTint="#2B2B2B"
             android:text="Register"
             android:textColor="@color/white"
-            android:textSize="20dp" />
+            android:textSize="20dp"
+            tools:visibility="visible" />
+
 
         <LinearLayout
             android:layout_width="wrap_content"
