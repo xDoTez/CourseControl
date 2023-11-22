@@ -1,26 +1,26 @@
 use rocket::serde::Serialize;
 use sqlx::{PgConnection, FromRow};
 
-#[derive(Serialize)]
+#[derive(Serialize, FromRow)]
 pub struct Category
 {
     id: Option<i32>,
     course_id: i32,
     name: String,
     points: i32,
-    requirement: i32
+    requirements: i32
 }
 
-#[derive(Serialize, FromRow)]
+#[derive(Serialize, FromRow, Clone, Copy)]
 pub struct CourseCategory
 {
-    id: Option<i32>,
+    pub id: Option<i32>,
     user_course_id: i32,
-    category_id: i32,
+    pub category_id: i32,
     points: i32,
 }
 
-async fn get_user_categories(user_course_id: i32, connectio: &mut PgConnection) -> Result<Vec<CourseCategory>, String>
+pub async fn get_user_categories(user_course_id: i32, connectio: &mut PgConnection) -> Result<Vec<CourseCategory>, String>
 {
     let course_category: Vec<CourseCategory> = match sqlx::query_as("SELECT * FROM course_categories WHERE user_course_id = $1")
         .bind(&user_course_id)
@@ -32,4 +32,18 @@ async fn get_user_categories(user_course_id: i32, connectio: &mut PgConnection) 
         };
 
     Ok(course_category)
+}
+
+pub async fn get_categories(category_ids: i32, connection: &mut PgConnection) -> Result<Category, String>
+{
+    let categories: Category = match sqlx::query_as("SELECT id, course_id, name, points, requirements FROM categories WHERE id = $1")
+        .bind(&category_ids)
+        .fetch_one(connection)
+        .await
+    {
+        Ok(cats) => cats,
+        Err(error) => return Err(format!("{}", error))
+    };
+
+    Ok(categories)
 }

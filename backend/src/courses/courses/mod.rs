@@ -14,7 +14,7 @@ pub struct Course
 #[derive(Serialize, FromRow, Clone, Copy)]
 pub struct UserCourse
 {
-    id: Option<i32>,
+    pub id: Option<i32>,
     user_id: i32,
     pub course_id: i32,
     is_active: bool
