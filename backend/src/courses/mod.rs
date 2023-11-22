@@ -92,17 +92,20 @@ async fn get_all_categories_for_user(parent_course_data_id: i32, connection: &mu
     let mut results: Vec<CategoryData> = Vec::new();
     for cat_data in categoriy_data
         {
-            results.push(CategoryData { category: match categories::get_categories(cat_data.category_id, connection).await
-                {
-                    Ok(cat) => cat,
-                    Err(error) => return Err(format!("{}", error))
-                }, category_user_data: cat_data, 
-                subcategories: match cat_data.id
+            results.push(CategoryData 
+                { 
+                    category: match categories::get_categories(cat_data.category_id, connection).await
+                        {
+                            Ok(cat) => cat,
+                            Err(error) => return Err(format!("{}", error))
+                        }, 
+                    category_user_data: cat_data, 
+                    subcategories: match cat_data.id
                     {
                         Some(id) => {match get_all_subcategories_for_category(id.clone(), connection).await
                         {
-                                Ok(subcats) => Some(subcats),
-                                Err(error) => return Err(format!("{}", error))
+                            Ok(subcats) => Some(subcats),
+                            Err(error) => return Err(format!("{}", error))
                         }},
                         None => return Err(format!("Category data id missing"))
                     },
@@ -115,5 +118,25 @@ async fn get_all_categories_for_user(parent_course_data_id: i32, connection: &mu
 
 async fn get_all_subcategories_for_category(parent_category_data_id: i32, connection: &mut PgConnection) -> Result<Vec<SubcategoryData>, String>
 {
-    todo!();
+    let subcategory_data = match subcategories::get_user_subcategory(parent_category_data_id, connection).await
+    {
+        Ok(subcats) => subcats,
+        Err(error) => return Err(format!("{}", error))
+    };
+
+    let mut results: Vec<SubcategoryData> = Vec::new();
+    for subcat_data in subcategory_data
+    {
+        results.push(SubcategoryData 
+            {
+                subcategory: match subcategories::get_subcategory(subcat_data.subcategory_id, connection).await
+                    {
+                        Ok(subcat) => subcat,
+                        Err(error) => return Err(error)
+                    }, 
+                subcategory_user_data: subcat_data
+            });
+    }
+
+    Ok(results)
 }
