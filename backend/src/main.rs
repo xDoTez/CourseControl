@@ -66,16 +66,24 @@ struct ResponseMessage
     response: String,
 }
 
+#[derive(Serialize)]
+struct UserCourseData
+    {
+        status: String,
+        message: Option<String>,
+        data: Option<Vec<courses::CourseData>>
+    }
 
 #[post("/course_data/", format = "json", data = "<session_token>")]
-async fn get_course_data(session_token: Json<session_token::SessionToken>) -> Json<Result<Vec<courses::CourseData>, ResponseMessage>>
+async fn get_course_data(session_token: Json<session_token::SessionToken>) -> Json<UserCourseData>
 {
     let session_token: session_token::SessionToken = session_token.into_inner();
 
     Json(match courses::get_all_course_for_user(session_token, true).await
         {
-            Ok(user_course) => Ok(user_course),
-            Err(error) => Err(ResponseMessage{ response: error})
+            courses::UserCourseResult::Success(result) => UserCourseData { status: String::from("Success"), message: None, data: Some(result) },
+            courses::UserCourseResult::DatabaseError(error) => UserCourseData { status: String::from("DatabaseError"), message: Some(error), data: None},
+            default => UserCourseData{ status: default.to_string(), message: None, data: None } 
         })
 }
 
