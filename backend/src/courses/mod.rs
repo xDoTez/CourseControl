@@ -72,7 +72,7 @@ pub async fn get_all_course_for_user(session_token: session_token::SessionToken,
     match session_token.validate_token(&mut connection).await
         {
             Ok(_) => {},
-            Err(error) => return UserCourseResult::InvalidSessionToken
+            Err(_) => return UserCourseResult::InvalidSessionToken
         };
 
     let courses_data = match courses::get_user_course_data(session_token, is_active, &mut connection)

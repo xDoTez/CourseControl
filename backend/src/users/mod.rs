@@ -266,23 +266,4 @@ impl User // impl block for user login
 
         Ok(users)
     }
-
-    async fn create_session_token(user: User, connection: &mut PgConnection) -> UserLoginResult
-    {
-        let session_token = match user.id
-        {
-            Some(id) => SessionToken::new(id),
-            None => return UserLoginResult::MissingData
-        };
-
-        match sqlx::query("INSERT INTO sessions (\"user\", session_token, expiration) VALUES ($1, $2, $3)")
-            .bind(&session_token.user)
-            .bind(&session_token.session_token)
-            .bind(&session_token.expiration)
-            .execute(connection).await
-        {
-            Ok(_) => UserLoginResult::SuccessfulLogin(session_token),
-            Err(error) => UserLoginResult::DataBaseError(format!("{}", error))
-        }
-    }
 }
