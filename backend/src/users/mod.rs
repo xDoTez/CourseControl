@@ -1,18 +1,18 @@
 use serde::{Serialize, Deserialize};
 use sqlx::{FromRow, PgConnection};
-use chrono::{NaiveDateTime, Local, Duration};
+use chrono::{NaiveDateTime, Local};
 use std::collections::hash_map::DefaultHasher;
 use std::fmt::{Display, Debug};
 use std::hash::{Hash, Hasher};
-use rand::Rng;
 
 use crate::database;
 use crate::regex_checks;
+use crate::session_token;
 
 #[derive(FromRow, Debug, Serialize, Deserialize)]
 pub struct User
 {
-    id: Option<i32>,
+    pub id: Option<i32>,
     username: String,
     password: String,
     email: String,
@@ -38,6 +38,15 @@ impl User // impl block for misc routes
         };
 
         Ok(user)
+    }
+
+    fn salt_and_hash_string<T: Display>(text: &str, salt: &T) -> String
+    {
+        let salted_text = format!("{}{}", text, salt);
+        let mut hasher = DefaultHasher::new();
+
+        salted_text.hash(&mut hasher);
+        hasher.finish().to_string()
     }
 }
 
@@ -190,15 +199,6 @@ impl User // impl block for user registrations
             _ => UserRegistrationResult::EmailDuplicate
         }
     }
-
-    fn salt_and_hash_string<T: Display>(text: &str, salt: &T) -> String
-    {
-        let salted_text = format!("{}{}", text, salt);
-        let mut hasher = DefaultHasher::new();
-
-        salted_text.hash(&mut hasher);
-        hasher.finish().to_string()
-    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -211,27 +211,10 @@ pub struct UserLoginCredentials
 #[derive(Serialize)]
 pub enum UserLoginResult
 {
-    SuccessfulLogin(SessionToken),
+    SuccessfulLogin(session_token::SessionToken),
     InvalidCredentials,
     MissingData,
     DataBaseError(String)
-}
-
-#[derive(FromRow, Serialize)]
-pub struct SessionToken
-{
-    user: i32,
-    session_token: String,
-    expiration: NaiveDateTime
-}
-
-impl SessionToken
-{
-    pub fn new(user_id: i32) -> Self
-    {
-        let token: u64 = rand::thread_rng().gen();
-        SessionToken { user: user_id, session_token: token.to_string(), expiration: Local::now().naive_local() + Duration::hours(1) }
-    }
 }
 
 impl User // impl block for user login
@@ -266,7 +249,7 @@ impl User // impl block for user login
 
         match password_hashes_match
         {
-            true => User::create_session_token(user, &mut connection).await,
+            true => session_token::SessionToken::create_session_token(user, &mut connection).await,
             false => UserLoginResult::InvalidCredentials
         }
     }
@@ -301,5 +284,5 @@ impl User // impl block for user login
             Ok(_) => UserLoginResult::SuccessfulLogin(session_token),
             Err(error) => UserLoginResult::DataBaseError(format!("{}", error))
         }
-    } 
+    }
 }

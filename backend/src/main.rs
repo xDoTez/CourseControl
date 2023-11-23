@@ -3,8 +3,10 @@
 mod test;
 
 mod users;
+mod courses;
 mod database;
 mod regex_checks;
+mod session_token;
 
 use sqlx::Row;
 
@@ -70,8 +72,36 @@ async fn login_user(user_login_credentials: Json<users::UserLoginCredentials>) -
     Json(UserLoginResult{ status: users::User::login_user(user_login_credentials).await})
 }
 
+#[derive(Serialize)]
+struct ResponseMessage
+{
+    response: String,
+}
+
+#[derive(Serialize)]
+struct UserCourseData
+    {
+        status: String,
+        message: Option<String>,
+        data: Option<Vec<courses::CourseData>>
+    }
+
+#[post("/course_data/", format = "json", data = "<session_token>")]
+async fn get_course_data(session_token: Json<session_token::SessionToken>) -> Json<UserCourseData>
+{
+    let session_token: session_token::SessionToken = session_token.into_inner();
+
+    Json(match courses::get_all_course_for_user(session_token, true).await
+        {
+            courses::UserCourseResult::Success(result) => UserCourseData { status: String::from("Success"), message: None, data: Some(result) },
+            courses::UserCourseResult::DatabaseError(error) => UserCourseData { status: String::from("DatabaseError"), message: Some(error), data: None},
+            default => UserCourseData{ status: default.to_string(), message: None, data: None } 
+        })
+}
+
 #[launch]
 fn rocket() -> _ {
     rocket::build().mount("/", routes![status])
         .mount("/users/", routes![get_user_by_id, register_user, login_user])
+        .mount("/something", routes![get_course_data])
 }
