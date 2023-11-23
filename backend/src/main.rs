@@ -99,9 +99,24 @@ async fn get_course_data(session_token: Json<session_token::SessionToken>) -> Js
         })
 }
 
+#[post("/course_data_old/", format = "json", data = "<session_token>")]
+async fn get_course_data_old(session_token: Json<session_token::SessionToken>) -> Json<UserCourseData>
+{
+    let session_token: session_token::SessionToken = session_token.into_inner();
+
+    Json(match courses::get_all_course_for_user(session_token, false).await
+        {
+            courses::UserCourseResult::Success(result) => UserCourseData { status: String::from("Success"), message: None, data: Some(result) },
+            courses::UserCourseResult::DatabaseError(error) => UserCourseData { status: String::from("DatabaseError"), message: Some(error), data: None},
+            default => UserCourseData{ status: default.to_string(), message: None, data: None } 
+        })
+}
+
+
+
 #[launch]
 fn rocket() -> _ {
     rocket::build().mount("/", routes![status])
         .mount("/users/", routes![get_user_by_id, register_user, login_user])
-        .mount("/something", routes![get_course_data])
+        .mount("/something", routes![get_course_data, get_course_data_old])
 }
