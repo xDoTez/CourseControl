@@ -2,6 +2,8 @@ package com.example.coursecontrol
 
 import android.os.Bundle
 import android.util.Log
+import android.view.View
+import android.view.View.OnClickListener
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
@@ -20,10 +22,9 @@ class RegistrationActivity : MainActivity(){
     private lateinit var etEmail: EditText
     private lateinit var etPassword: EditText
     private lateinit var etConfirmPassword : EditText
-    private lateinit var btnRegister: Button
 
     private val retrofit = Retrofit.Builder()
-        .baseUrl("http://165.232.76.112:8000/users/") //
+        .baseUrl("https://jsonplaceholder.typicode.com/") //
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
@@ -32,17 +33,20 @@ class RegistrationActivity : MainActivity(){
         super.onCreate(savedInstanceState)
         setContentView(R.layout.registration)
 
+        val btnRegister: Button = findViewById(R.id.btnRegister)
         etName = findViewById(R.id.etName)
         etUsername = findViewById(R.id.etUsername)
         etEmail = findViewById(R.id.etEmail)
         etPassword = findViewById(R.id.etPassword)
         etConfirmPassword = findViewById(R.id.etConfirmPassword)
-        btnRegister = findViewById(R.id.btnRegister)
 
-        btnRegister.setOnClickListener {
-            Log.d("RegistrationActivity", "Button clicked")
-            this.registerUser()
-        }
+
+        btnRegister.setOnClickListener(object : OnClickListener {
+            override fun onClick(v: View) {
+                Log.d("RegistrationActivity", "Button clicked")
+                registerUser()
+            }
+        })
     }
     private fun registerUser() {
         val name = etName.text.toString()
@@ -57,8 +61,6 @@ class RegistrationActivity : MainActivity(){
         }
         val registrationBody = RegistrationBody(username, email, password)
 
-        Log.d("RegistrationActivity", "Trying to register user: $registrationBody")
-
         val call = apiService.registerUser(registrationBody)
 
         call.enqueue(object : Callback<ResponseBody> {
@@ -71,6 +73,7 @@ class RegistrationActivity : MainActivity(){
             }
             override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
                 if (t is IOException) {
+                    Log.e("RegistrationActivity", "Network error: ${t.message}")
                     handleNetworkError()
                 } else {
                     handleRegistrationError()
