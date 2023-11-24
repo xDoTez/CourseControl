@@ -24,7 +24,7 @@ class RegistrationActivity : MainActivity(){
     private lateinit var etConfirmPassword : EditText
 
     private val retrofit = Retrofit.Builder()
-        .baseUrl("https://jsonplaceholder.typicode.com/") //
+        .baseUrl("http://165.232.76.112:8000/users/") //
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
