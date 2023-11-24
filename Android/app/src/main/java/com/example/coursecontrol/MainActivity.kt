@@ -1,6 +1,8 @@
 package com.example.coursecontrol
 
 import android.os.Bundle
+import android.widget.ArrayAdapter
+import android.widget.ListView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,31 +15,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.coursecontrol.ui.theme.CourseControlTheme
 
 class MainActivity : ComponentActivity() {
+
+    private lateinit var lvCourses: ListView
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
-            CourseControlTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    Greeting("Android")
-                }
-            }
-        }
-    }
-}
+        setContentView(R.layout.activity_main)
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-            text = "Hello $name!",
-            modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    CourseControlTheme {
-        Greeting("Android")
+        lvCourses = findViewById(R.id.lvCourses)
     }
 }
