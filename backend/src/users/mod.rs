@@ -217,6 +217,19 @@ pub enum UserLoginResult
     DataBaseError(String)
 }
 
+impl Display for UserLoginResult
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+    {
+        match self
+        {
+            UserLoginResult::SuccessfulLogin(_) => write!(f, "{}", String::from("SuccessfullLogin")),
+            UserLoginResult::DataBaseError(_) => write!(f, "{}", String::from("DataBaseError")),
+            UserLoginResult::MissingData => write!(f, "{}", String::from("MissingData")),
+            UserLoginResult::InvalidCredentials => write!(f, "{}", String::from("InvalidCredentials"))
+        }
+    }
+}
 impl User // impl block for user login
 {
     pub async fn login_user(user_login_credentials: UserLoginCredentials) -> UserLoginResult

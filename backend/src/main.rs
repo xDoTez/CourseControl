@@ -61,7 +61,9 @@ async fn register_user(user_credentials: Json<users::UserCredentials>) -> Json<U
 #[derive(Serialize)]
 struct UserLoginResult
 {
-    status: users::UserLoginResult
+    status: String,
+    error_message: Option<String>,
+    session_token: Option<session_token::SessionToken>
 }
 
 #[post("/login", format = "json", data = "<user_login_credentials>")]
@@ -69,9 +71,13 @@ async fn login_user(user_login_credentials: Json<users::UserLoginCredentials>) -
 {
     let user_login_credentials = user_login_credentials.into_inner();
 
-    Json(UserLoginResult{ status: users::User::login_user(user_login_credentials).await})
+    Json(match users::User::login_user(user_login_credentials).await
+        {
+            users::UserLoginResult::SuccessfulLogin(token) => UserLoginResult { status: String::from("SuccessfullLogin"), error_message: None, session_token: Some(token) },
+            users::UserLoginResult::DataBaseError(error) => UserLoginResult { status: String::from("DataBaseError"), error_message: Some(error), session_token: None },
+            default => UserLoginResult { status: default.to_string(), error_message: None, session_token: None }
+        })
 }
-
 #[derive(Serialize)]
 struct ResponseMessage
 {
