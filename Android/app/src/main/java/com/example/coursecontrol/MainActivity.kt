@@ -26,16 +26,17 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var gumb: Button
+    private lateinit var btnHomeLogin: Button
+    private lateinit var btnHomeRegister: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        btnHomeLogin = findViewById(R.id.btnHomeLogin)
+        btnHomeRegister = findViewById(R.id.btnHomeRegister)
 
-
-        gumb = findViewById(R.id.gumb)
-        gumb.setOnClickListener {
+        btnHomeLogin.setOnClickListener {
             val intent = Intent(this@MainActivity, LoginActivity::class.java)
             startActivity(intent)
         }
