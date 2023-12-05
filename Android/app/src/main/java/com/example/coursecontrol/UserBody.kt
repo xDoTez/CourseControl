@@ -1,7 +1,7 @@
 package com.example.coursecontrol
 
-class RegistrationBody (
+data class UserBody(
     val username: String,
-    val email: String,
     val password: String,
-    )
+    val email: String
+)
