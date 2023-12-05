@@ -61,6 +61,32 @@ impl Display for UserCourseResult
     }
 }
 
+
+#[derive(FromFormField, Debug)]
+pub enum CourseDataSortingOptions
+    {
+        NameAlphabeticAsc,
+        NameAlphabeticDesc,
+        SemesterAsc,
+        SemesterDesc
+    }
+
+impl CourseDataSortingOptions
+{
+    pub fn from_string(string: String) -> Self
+    {
+        println!("Passed string {}", &string);
+        match string.as_str()
+            {
+                "NameAlphabeticAsc" => CourseDataSortingOptions::NameAlphabeticAsc,
+                "NameAlphabeticDesc" => CourseDataSortingOptions::NameAlphabeticDesc,
+                "SemesterAsc" => CourseDataSortingOptions::SemesterAsc,
+                "SemesterDesc" => CourseDataSortingOptions::SemesterDesc,
+                &_ => CourseDataSortingOptions::NameAlphabeticDesc
+            }
+    }
+}
+
 pub async fn get_all_course_for_user(session_token: session_token::SessionToken, is_active: bool) -> UserCourseResult
 {
     let mut connection = match database::establish_connection_to_database().await

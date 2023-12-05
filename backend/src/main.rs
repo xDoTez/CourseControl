@@ -92,10 +92,18 @@ struct UserCourseData
         data: Option<Vec<courses::CourseData>>
     }
 
-#[post("/course_data/", format = "json", data = "<session_token>")]
-async fn get_course_data(session_token: Json<session_token::SessionToken>) -> Json<UserCourseData>
+#[post("/course_data?<sorting_option..>", format = "json", data = "<session_token>")]
+async fn get_course_data(session_token: Json<session_token::SessionToken>, sorting_option: Option<String>) -> Json<UserCourseData>
 {
     let session_token: session_token::SessionToken = session_token.into_inner();
+
+    let sorting_option = match sorting_option
+        {
+            Some(sort) => courses::CourseDataSortingOptions::from_string(sort),
+            None => courses::CourseDataSortingOptions::NameAlphabeticAsc
+        };
+
+    println!("Sorting option selected: {:?}", sorting_option);
 
     Json(match courses::get_all_course_for_user(session_token, true).await
         {
@@ -105,7 +113,7 @@ async fn get_course_data(session_token: Json<session_token::SessionToken>) -> Js
         })
 }
 
-#[post("/course_data_old/", format = "json", data = "<session_token>")]
+#[post("/course_data_old", format = "json", data = "<session_token>")]
 async fn get_course_data_old(session_token: Json<session_token::SessionToken>) -> Json<UserCourseData>
 {
     let session_token: session_token::SessionToken = session_token.into_inner();
