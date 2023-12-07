@@ -21,8 +21,10 @@ pub struct CourseData
 {
     course: courses::Course,
     course_user_data: courses::UserCourse,
-    catoegoris: Option<Vec<CategoryData>>
+    catagories: Option<Vec<CategoryData>>
 }
+
+// comment careogories
 
 #[derive(Serialize)]
 pub struct CategoryData
@@ -75,7 +77,6 @@ impl CourseDataSortingOptions
 {
     pub fn from_string(string: String) -> Self
     {
-        println!("Passed string {}", &string);
         match string.as_str()
             {
                 "NameAlphabeticAsc" => CourseDataSortingOptions::NameAlphabeticAsc,
@@ -85,9 +86,20 @@ impl CourseDataSortingOptions
                 &_ => CourseDataSortingOptions::NameAlphabeticDesc
             }
     }
+
+    pub fn to_query_sorting_clause(&self) -> String
+    {
+        match self
+            {
+                CourseDataSortingOptions::NameAlphabeticAsc => String::from(" ORDER BY courses.name ASC"),
+                CourseDataSortingOptions::NameAlphabeticDesc => String::from(" ORDER BY courses.name DESC"),
+                CourseDataSortingOptions::SemesterAsc => String::from(" ORDER BY courses.semester ASC"),
+                CourseDataSortingOptions::SemesterDesc => String::from(" ORDER BY courses.semester DESC")
+            }
+    }
 }
 
-pub async fn get_all_course_for_user(session_token: session_token::SessionToken, is_active: bool) -> UserCourseResult
+pub async fn get_all_course_for_user(session_token: session_token::SessionToken, is_active: bool, sorting_option: CourseDataSortingOptions) -> UserCourseResult
 {
     let mut connection = match database::establish_connection_to_database().await
         {
@@ -101,7 +113,7 @@ pub async fn get_all_course_for_user(session_token: session_token::SessionToken,
             Err(_) => return UserCourseResult::InvalidSessionToken
         };
 
-    let courses_data = match courses::get_user_course_data(session_token, is_active, &mut connection)
+    let courses_data = match courses::get_user_course_data(session_token, is_active, &mut connection, &sorting_option)
         .await
     {
         Ok(data) => data,
@@ -109,7 +121,7 @@ pub async fn get_all_course_for_user(session_token: session_token::SessionToken,
     };
 
     let course_ids: Vec<i32> = courses_data.iter().map(|x| x.course_id).collect();
-    let courses = match courses::get_courses(course_ids, &mut connection).await
+    let courses = match courses::get_courses(course_ids, &mut connection, &sorting_option).await
     {
         Ok(courses) => courses,
         Err(error) => return UserCourseResult::DatabaseError(error)
@@ -119,7 +131,7 @@ pub async fn get_all_course_for_user(session_token: session_token::SessionToken,
     for (course_data, course) in iproduct!(courses_data, courses).filter(|(x, y)| match y.id { Some(id) => id == x.course_id, None => false })
     {
         results.push(CourseData 
-            { course: course, course_user_data: course_data, catoegoris: match course_data.id 
+            { course: course, course_user_data: course_data, catagories: match course_data.id 
                 { 
                     Some(id) => Some(match get_all_categories_for_user(id, &mut connection).await
                             {

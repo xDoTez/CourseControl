@@ -1,6 +1,6 @@
 use rocket::serde::Serialize;
 use sqlx::{FromRow, PgConnection};
-use super::session_token;
+use super::{session_token, CourseDataSortingOptions};
 
 #[derive(Serialize, FromRow, Clone)]
 pub struct Course
@@ -20,11 +20,14 @@ pub struct UserCourse
     is_active: bool
 }
 
-pub async fn get_user_course_data(session_token: session_token::SessionToken, is_active: bool, connection: &mut PgConnection) -> Result<Vec<UserCourse>, String>
+pub async fn get_user_course_data(session_token: session_token::SessionToken, is_active: bool, connection: &mut PgConnection, sorting_option: &CourseDataSortingOptions) -> Result<Vec<UserCourse>, String>
 {
-    let user_course: Vec<UserCourse> = match sqlx::query_as("SELECT * FROM user_courses WHERE user_id = $1 AND is_active = $2")
+    let query = format!("SELECT user_courses.id, user_id, course_id, is_active FROM user_courses, courses WHERE user_id = $1 AND is_active = $2 AND user_courses.course_id = courses.id {}", sorting_option.to_query_sorting_clause());
+    println!("{}", &query);
+    let user_course: Vec<UserCourse> = match sqlx::query_as(&query)
         .bind(&session_token.user)
         .bind(&is_active)
+        .bind(&sorting_option.to_query_sorting_clause())
         .fetch_all(connection)
         .await
     {
@@ -35,9 +38,10 @@ pub async fn get_user_course_data(session_token: session_token::SessionToken, is
     Ok(user_course)
 }
 
-pub async fn get_courses(course_ids: Vec<i32>, connection: &mut PgConnection) -> Result<Vec<Course>, String>
+pub async fn get_courses(course_ids: Vec<i32>, connection: &mut PgConnection, sorting_option: &CourseDataSortingOptions) -> Result<Vec<Course>, String>
 {
-    let courses: Vec<Course> = match sqlx::query_as("SELECT id, name, semester, ects FROM courses WHERE id = ANY($1)")
+    let query = format!("SELECT id, name, semester, ects FROM courses WHERE id = ANY($1) {}", sorting_option.to_query_sorting_clause());
+    let courses: Vec<Course> = match sqlx::query_as(&query)
         .bind(&course_ids)
         .fetch_all(connection)
         .await
