@@ -103,8 +103,6 @@ async fn get_course_data(session_token: Json<session_token::SessionToken>, sorti
             None => courses::CourseDataSortingOptions::NameAlphabeticAsc
         };
 
-    println!("Sorting option selected: {:?}", sorting_option);
-
     Json(match courses::get_all_course_for_user(session_token, true, sorting_option).await
         {
             courses::UserCourseResult::Success(result) => UserCourseData { status: String::from("Success"), message: None, data: Some(result) },
