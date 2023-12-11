@@ -158,7 +158,7 @@ async fn get_all_categories_for_user(parent_course_data_id: i32, connection: &mu
         {
             results.push(CategoryData 
                 { 
-                    category: match categories::get_categories(cat_data.category_id, connection).await
+                    category: match categories::get_category(cat_data.category_id, connection).await
                         {
                             Ok(cat) => cat,
                             Err(error) => return Err(format!("{}", error))
@@ -203,4 +203,73 @@ async fn get_all_subcategories_for_category(parent_category_data_id: i32, connec
     }
 
     Ok(results)
+}
+
+struct CourseSkeleton
+{
+    course: courses::Course,
+    category_skeletons: Vec<CategorySkeleton>
+}
+
+struct CategorySkeleton
+{
+    category: categories::Category,
+    subcategories: Vec<subcategories::Subcategory>
+}
+
+impl CourseSkeleton
+{
+    async fn get_course_skeleton(course_id: i32, connection: &mut PgConnection) -> Result<CourseSkeleton, String>
+    {
+        let course = match courses::get_course(course_id, connection).await
+        {
+            Ok(course) => course,
+            Err(error) => return Err(error)
+        };
+
+        Ok(CourseSkeleton 
+        { 
+            course: course, 
+            category_skeletons: match CategorySkeleton::get_category_skeletons(course_id, connection).await
+                {
+                    Ok(cat_skeletons) => cat_skeletons,
+                    Err(error) => return Err(error)
+                }
+        })
+    }
+}
+
+impl CategorySkeleton
+{
+    async fn get_category_skeletons(course_id: i32, connection: &mut PgConnection) -> Result<Vec<CategorySkeleton>, String>
+    {
+        let categories = match categories::get_categories(course_id, connection).await
+            {
+                Ok(cats) => cats,
+                Err(error) => return Err(error)
+            };
+        
+        let mut category_skeletons: Vec<CategorySkeleton> = Vec::new();
+
+        for category in categories
+            {
+                let category_id = match category.id
+                {
+                    Some(id) => id,
+                    None => return Err(format!("Error missing from category"))
+                };
+
+                category_skeletons.push(CategorySkeleton 
+                    { 
+                        category: category, 
+                        subcategories: match subcategories::get_subcategories(category_id, connection).await
+                        {
+                            Ok(subcats) => subcats,
+                            Err(error) => return Err(error)
+                        }
+                    });
+            }
+
+        Ok(category_skeletons)
+    }
 }
