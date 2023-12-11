@@ -23,7 +23,6 @@ pub struct UserCourse
 pub async fn get_user_course_data(session_token: session_token::SessionToken, is_active: bool, connection: &mut PgConnection, sorting_option: &CourseDataSortingOptions) -> Result<Vec<UserCourse>, String>
 {
     let query = format!("SELECT user_courses.id, user_id, course_id, is_active FROM user_courses, courses WHERE user_id = $1 AND is_active = $2 AND user_courses.course_id = courses.id {}", sorting_option.to_query_sorting_clause());
-    println!("{}", &query);
     let user_course: Vec<UserCourse> = match sqlx::query_as(&query)
         .bind(&session_token.user)
         .bind(&is_active)

@@ -24,8 +24,6 @@ pub struct CourseData
     catagories: Option<Vec<CategoryData>>
 }
 
-// comment careogories
-
 #[derive(Serialize)]
 pub struct CategoryData
 {
@@ -64,7 +62,7 @@ impl Display for UserCourseResult
 }
 
 
-#[derive(FromFormField, Debug)]
+#[derive(FromFormField)]
 pub enum CourseDataSortingOptions
     {
         NameAlphabeticAsc,
