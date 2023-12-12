@@ -1,6 +1,7 @@
 package com.example.coursecontrol
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
@@ -78,5 +79,7 @@ class LoginActivity : AppCompatActivity() {
 
     private fun handleSuccessfulLogin() {
         Toast.makeText(this@LoginActivity, "Login successful!", Toast.LENGTH_SHORT).show()
+        val beginningActivity = Intent(this, BeginningActivity::class.java)
+        startActivity(beginningActivity);
     }
 }
