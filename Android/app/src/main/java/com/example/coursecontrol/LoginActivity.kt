@@ -73,7 +73,7 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun handleFailedLogin() {
-        Toast.makeText(this@LoginActivity, "Login failed!", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this@LoginActivity, "Invalid credentials", Toast.LENGTH_SHORT).show()
     }
 
     private fun handleSuccessfulLogin() {
