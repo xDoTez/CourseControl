@@ -272,4 +272,87 @@ impl CategorySkeleton
 
         Ok(category_skeletons)
     }
+
+    async fn insert_skeleton_data(&self, user_id: i32, connection: &mut PgConnection) -> Result<bool, String>
+    {
+
+        todo!();
+    }
+}
+
+pub enum AddingCourseResult
+    {
+        Success,
+        InvalidSessionToken,
+        InvalidCourse,
+        CourseGettingError,
+        DatabaseError(String),
+        DuplicateCourse,
+    }
+
+impl AddingCourseResult
+{
+    pub fn to_string(&self) -> String
+    {
+        match self
+            {
+                AddingCourseResult::Success => String::from("Success"),
+                AddingCourseResult::InvalidSessionToken => String::from("InvalidSessionToken"),
+                AddingCourseResult::InvalidCourse => String::from("InvalidCourse"),
+                AddingCourseResult::CourseGettingError => String::from("CourseGettingError"),
+                AddingCourseResult::DatabaseError(_) => String::from("DatabaseError"),
+                AddingCourseResult::DuplicateCourse => String::from("DuplicateCourse")
+            }
+    }
+}
+
+pub async fn add_course_to_user(session_token: session_token::SessionToken, course_id: i32) -> AddingCourseResult
+{
+    let mut connection = match database::establish_connection_to_database().await
+        {
+            Ok(con) => con,
+            Err(error) => return AddingCourseResult::DatabaseError(error)
+        };
+
+    match session_token.validate_token(&mut connection).await
+    {
+            Ok(con) => con,
+            Err(_) => return AddingCourseResult::InvalidSessionToken
+    };
+
+    match sqlx::query("SELECT * FROM courses WHERE id = $1")
+        .bind(&course_id)
+        .fetch_one(&mut connection)
+        .await
+    {
+        Ok(_) => {},
+        Err(_) => return AddingCourseResult::InvalidCourse
+    };
+
+    // Check if an active course with this id already exists for this user
+    match sqlx::query("SELECT * FROM user_courses WHERE user_id = $1 AND course_id = $2 AND is_active = true")
+        .bind(&session_token.user)
+        .bind(&course_id)
+        .fetch_one(&mut connection)
+        .await
+    {
+        Ok(_) => return AddingCourseResult::DuplicateCourse,
+        Err(_) => {}
+    };
+
+    // Get skeleton for course
+    let course_skeleton = match CourseSkeleton::get_course_skeleton(course_id, &mut connection).await
+    {
+        Ok(skeleton) => skeleton,
+        Err(_) => return AddingCourseResult::CourseGettingError
+    };
+
+    // Insert blanke course data
+    match course_skeleton.course.add_course_to_user(session_token.user, &mut connection).await
+    {
+        Ok(_) => {},
+        Err(error) => return AddingCourseResult::DatabaseError(error)
+    };
+
+    AddingCourseResult::Success
 }
