@@ -1,5 +1,5 @@
 use rocket::serde::Serialize;
-use sqlx::{PgConnection, FromRow};
+use sqlx::{PgConnection, FromRow, Row};
 
 #[derive(Serialize, FromRow)]
 pub struct Category
@@ -61,4 +61,25 @@ pub async fn get_categories(course_id: i32, connection: &mut PgConnection) -> Re
 
     Ok(categories)
 
+}
+
+impl Category
+{
+    pub async fn add_category_to_course_data(&self, user_course_id: i32, connection: &mut PgConnection) -> Result<i32, String>
+    {
+        let category_id = match self.id
+        {
+            Some(id) => id,
+            None => return Err(String::from("Missing category id"))
+        };
+
+        match sqlx::query("INSERT INTO course_categories (user_course_id, category_id, points) VALUES ($1, $2, 0) RETURNING id")
+            .bind(&user_course_id)
+            .bind(&category_id)
+            .fetch_one(connection).await
+        {
+            Ok(result) => Ok(result.get("id")),
+            Err(error) => Err(format!("{}", error))
+        }
+    }
 }

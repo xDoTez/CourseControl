@@ -273,10 +273,25 @@ impl CategorySkeleton
         Ok(category_skeletons)
     }
 
-    async fn insert_skeleton_data(&self, user_id: i32, connection: &mut PgConnection) -> Result<bool, String>
+    async fn insert_skeleton_data(&self, user_course_id: i32, connection: &mut PgConnection) -> Result<bool, String>
     {
+        match self.category.add_category_to_course_data(user_course_id, connection).await
+        {
+            Ok(category_id) =>
+            {
+                for subcat in &self.subcategories
+                {
+                    match subcat.add_subcategory_to_category_data(category_id, connection).await
+                    {
+                        Ok(_) => {},
+                        Err(error) => return Err(error)
+                    }
+                }
+            },
+            Err(error) => return Err(error)
+        };
 
-        todo!();
+        Ok(true)
     }
 }
 
@@ -350,7 +365,17 @@ pub async fn add_course_to_user(session_token: session_token::SessionToken, cour
     // Insert blanke course data
     match course_skeleton.course.add_course_to_user(session_token.user, &mut connection).await
     {
-        Ok(_) => {},
+        Ok(course_id) => 
+        {
+            for category in &course_skeleton.category_skeletons
+            {
+                match category.insert_skeleton_data(course_id, &mut connection).await
+                {
+                    Ok(_) => {},
+                    Err(error) => return AddingCourseResult::DatabaseError(error)
+                }
+            }
+        },
         Err(error) => return AddingCourseResult::DatabaseError(error)
     };
 
