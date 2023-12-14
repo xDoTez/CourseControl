@@ -10,7 +10,7 @@ mod session_token;
 
 use sqlx::Row;
 
-use rocket::serde::{json::Json, Serialize};
+use rocket::serde::{json::Json, Serialize, Deserialize};
 
 #[get("/")]
 async fn status() -> Json<Result<String, String>>
@@ -130,11 +130,37 @@ async fn get_course_data_old(session_token: Json<session_token::SessionToken>, s
         })
 }
 
+#[derive(Deserialize)]
+struct AddingCourseData
+    {
+        session_token: session_token::SessionToken,
+        course_id: i32
+    }
 
+#[derive(Serialize)]
+struct AddingCourseResult
+    {
+        status: String,
+        message: Option<String>
+    }
+
+#[post("/add_course_data", format = "json", data = "<adding_course_data>")]
+async fn add_course_to_user(adding_course_data: Json<AddingCourseData>) -> Json<AddingCourseResult>
+{
+    let adding_course_data = adding_course_data.into_inner();
+
+    Json(
+       match courses::add_course_to_user(adding_course_data.session_token, adding_course_data.course_id).await
+            {
+                courses::AddingCourseResult::DatabaseError(error) => AddingCourseResult { status: String::from("DatabaseError"), message: Some(error)},
+                other => AddingCourseResult { status: other.to_string(), message: None }
+            }
+    )
+}
 
 #[launch]
 fn rocket() -> _ {
     rocket::build().mount("/", routes![status])
-        .mount("/users/", routes![get_user_by_id, register_user, login_user])
+        .mount("/users/", routes![get_user_by_id, register_user, login_user, add_course_to_user])
         .mount("/something", routes![get_course_data, get_course_data_old])
 }

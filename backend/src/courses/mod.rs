@@ -158,7 +158,7 @@ async fn get_all_categories_for_user(parent_course_data_id: i32, connection: &mu
         {
             results.push(CategoryData 
                 { 
-                    category: match categories::get_categories(cat_data.category_id, connection).await
+                    category: match categories::get_category(cat_data.category_id, connection).await
                         {
                             Ok(cat) => cat,
                             Err(error) => return Err(format!("{}", error))
@@ -203,4 +203,181 @@ async fn get_all_subcategories_for_category(parent_category_data_id: i32, connec
     }
 
     Ok(results)
+}
+
+struct CourseSkeleton
+{
+    course: courses::Course,
+    category_skeletons: Vec<CategorySkeleton>
+}
+
+struct CategorySkeleton
+{
+    category: categories::Category,
+    subcategories: Vec<subcategories::Subcategory>
+}
+
+impl CourseSkeleton
+{
+    async fn get_course_skeleton(course_id: i32, connection: &mut PgConnection) -> Result<CourseSkeleton, String>
+    {
+        let course = match courses::get_course(course_id, connection).await
+        {
+            Ok(course) => course,
+            Err(error) => return Err(error)
+        };
+
+        Ok(CourseSkeleton 
+        { 
+            course: course, 
+            category_skeletons: match CategorySkeleton::get_category_skeletons(course_id, connection).await
+                {
+                    Ok(cat_skeletons) => cat_skeletons,
+                    Err(error) => return Err(error)
+                }
+        })
+    }
+}
+
+impl CategorySkeleton
+{
+    async fn get_category_skeletons(course_id: i32, connection: &mut PgConnection) -> Result<Vec<CategorySkeleton>, String>
+    {
+        let categories = match categories::get_categories(course_id, connection).await
+            {
+                Ok(cats) => cats,
+                Err(error) => return Err(error)
+            };
+        
+        let mut category_skeletons: Vec<CategorySkeleton> = Vec::new();
+
+        for category in categories
+            {
+                let category_id = match category.id
+                {
+                    Some(id) => id,
+                    None => return Err(format!("Error missing from category"))
+                };
+
+                category_skeletons.push(CategorySkeleton 
+                    { 
+                        category: category, 
+                        subcategories: match subcategories::get_subcategories(category_id, connection).await
+                        {
+                            Ok(subcats) => subcats,
+                            Err(error) => return Err(error)
+                        }
+                    });
+            }
+
+        Ok(category_skeletons)
+    }
+
+    async fn insert_skeleton_data(&self, user_course_id: i32, connection: &mut PgConnection) -> Result<bool, String>
+    {
+        match self.category.add_category_to_course_data(user_course_id, connection).await
+        {
+            Ok(category_id) =>
+            {
+                for subcat in &self.subcategories
+                {
+                    match subcat.add_subcategory_to_category_data(category_id, connection).await
+                    {
+                        Ok(_) => {},
+                        Err(error) => return Err(error)
+                    }
+                }
+            },
+            Err(error) => return Err(error)
+        };
+
+        Ok(true)
+    }
+}
+
+pub enum AddingCourseResult
+    {
+        Success,
+        InvalidSessionToken,
+        InvalidCourse,
+        CourseGettingError,
+        DatabaseError(String),
+        DuplicateCourse,
+    }
+
+impl AddingCourseResult
+{
+    pub fn to_string(&self) -> String
+    {
+        match self
+            {
+                AddingCourseResult::Success => String::from("Success"),
+                AddingCourseResult::InvalidSessionToken => String::from("InvalidSessionToken"),
+                AddingCourseResult::InvalidCourse => String::from("InvalidCourse"),
+                AddingCourseResult::CourseGettingError => String::from("CourseGettingError"),
+                AddingCourseResult::DatabaseError(_) => String::from("DatabaseError"),
+                AddingCourseResult::DuplicateCourse => String::from("DuplicateCourse")
+            }
+    }
+}
+
+pub async fn add_course_to_user(session_token: session_token::SessionToken, course_id: i32) -> AddingCourseResult
+{
+    let mut connection = match database::establish_connection_to_database().await
+        {
+            Ok(con) => con,
+            Err(error) => return AddingCourseResult::DatabaseError(error)
+        };
+
+    match session_token.validate_token(&mut connection).await
+    {
+            Ok(con) => con,
+            Err(_) => return AddingCourseResult::InvalidSessionToken
+    };
+
+    match sqlx::query("SELECT * FROM courses WHERE id = $1")
+        .bind(&course_id)
+        .fetch_one(&mut connection)
+        .await
+    {
+        Ok(_) => {},
+        Err(_) => return AddingCourseResult::InvalidCourse
+    };
+
+    // Check if an active course with this id already exists for this user
+    match sqlx::query("SELECT * FROM user_courses WHERE user_id = $1 AND course_id = $2 AND is_active = true")
+        .bind(&session_token.user)
+        .bind(&course_id)
+        .fetch_one(&mut connection)
+        .await
+    {
+        Ok(_) => return AddingCourseResult::DuplicateCourse,
+        Err(_) => {}
+    };
+
+    // Get skeleton for course
+    let course_skeleton = match CourseSkeleton::get_course_skeleton(course_id, &mut connection).await
+    {
+        Ok(skeleton) => skeleton,
+        Err(_) => return AddingCourseResult::CourseGettingError
+    };
+
+    // Insert blanke course data
+    match course_skeleton.course.add_course_to_user(session_token.user, &mut connection).await
+    {
+        Ok(course_id) => 
+        {
+            for category in &course_skeleton.category_skeletons
+            {
+                match category.insert_skeleton_data(course_id, &mut connection).await
+                {
+                    Ok(_) => {},
+                    Err(error) => return AddingCourseResult::DatabaseError(error)
+                }
+            }
+        },
+        Err(error) => return AddingCourseResult::DatabaseError(error)
+    };
+
+    AddingCourseResult::Success
 }

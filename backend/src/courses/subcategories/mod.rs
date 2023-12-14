@@ -47,3 +47,37 @@ pub async fn get_subcategory(subcategory_id: i32, connection: &mut PgConnection)
     Ok(subcategory)
 }
 
+pub async fn get_subcategories(category_id: i32, connection: &mut PgConnection) -> Result<Vec<Subcategory>, String>
+{
+    let subcategories: Vec<Subcategory> = match sqlx::query_as("SELECT id, category_id, name, points, requirements FROM subcategories WHERE category_id = $1")
+        .bind(&category_id)
+        .fetch_all(connection)
+        .await
+    {
+        Ok(subcats) => subcats,
+        Err(error) => return Err(format!("{}", error))
+    };
+
+    Ok(subcategories)
+}
+
+impl Subcategory
+{
+    pub async fn add_subcategory_to_category_data(&self, category_id: i32, connection: &mut PgConnection) -> Result<i32, String>
+    {
+        let subcategory_id = match self.id
+        {
+            Some(id) => id,
+            None => return Err(String::from("Missing category id"))
+        };
+
+        match sqlx::query("INSERT INTO category_subcategories (user_course_category_id, subcategory_id, points) VALUES ($1, $2, 0)")
+            .bind(&category_id)
+            .bind(&subcategory_id)
+            .execute(connection).await
+        {
+            Ok(_) => Ok(1),
+            Err(error) => Err(format!("{}", error))
+        }
+    }
+}

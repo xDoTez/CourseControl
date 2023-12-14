@@ -1,5 +1,5 @@
 use rocket::serde::Serialize;
-use sqlx::{FromRow, PgConnection};
+use sqlx::{FromRow, PgConnection, Row};
 use super::{session_token, CourseDataSortingOptions};
 
 #[derive(Serialize, FromRow, Clone)]
@@ -50,4 +50,33 @@ pub async fn get_courses(course_ids: Vec<i32>, connection: &mut PgConnection, so
     };
 
     Ok(courses)
+}
+
+pub async fn get_course(course_id: i32, connection: &mut PgConnection) -> Result<Course, String>
+{
+    let course: Course = match sqlx::query_as("SELECT id, name, semester, ects FROM courses WHERE id = $1")
+        .bind(course_id)
+        .fetch_one(connection)
+        .await
+    {
+        Ok(course) => course,
+        Err(error) => return Err(format!("{}", error))
+    };
+    
+    Ok(course)
+}
+
+impl Course
+{
+    pub async fn add_course_to_user(&self, user_id: i32, connection: &mut PgConnection) -> Result<i32, String>
+    {
+        match sqlx::query("INSERT INTO user_courses (user_id, course_id, is_active) VALUES ($1, $2, true) RETURNING id")
+            .bind(&user_id)
+            .bind(&self.id)
+            .fetch_one(connection).await
+        {
+            Ok(result) => Ok(result.get("id")),
+            Err(error) => Err(format!("{}", error))
+        }
+    }
 }
