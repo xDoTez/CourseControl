@@ -1,0 +1,27 @@
+version: '3'
+services:
+  api:
+    image: pbelcar/air-backend
+    environment:
+      DATABASE_URL: "postgres://postgres:${POSTGRES_PASSWORD}@db:5432"
+      ROCKET_ADDRESS: "0.0.0.0"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+    - "8000:8000"
+    depends_on:
+      - db
+  db:
+    image: postgres:16.0
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db:/var/lib/postgresql/data
+
+volumes:
+  db:
+    driver: local
