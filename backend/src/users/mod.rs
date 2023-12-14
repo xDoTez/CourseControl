@@ -1,6 +1,6 @@
 use serde::{Serialize, Deserialize};
 use sqlx::{FromRow, PgConnection};
-use chrono::{NaiveDateTime, Local};
+use chrono::{NaiveDateTime, Local, Timelike, Datelike};
 use std::collections::hash_map::DefaultHasher;
 use std::fmt::{Display, Debug};
 use std::hash::{Hash, Hasher};
@@ -17,6 +17,25 @@ pub struct User
     password: String,
     email: String,
     datetime_of_creation: Option<NaiveDateTime>
+}
+
+struct CustomeTimeStamp(NaiveDateTime);
+
+impl Display for CustomeTimeStamp
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}-{:02}-{:02} {:02}:{:02}:{:02}.{:06}",
+            self.0.year(),
+            self.0.month(),
+            self.0.day(),
+            self.0.hour(),
+            self.0.minute(),
+            self.0.second(),
+            self.0.timestamp_subsec_micros()
+        )
+    }
 }
 
 impl User // impl block for misc routes
@@ -104,7 +123,7 @@ impl User // impl block for user registrations
 
         let datetime_of_creation = Local::now().naive_local();
         println!("Datetime: {}\nPassword passed: {}", datetime_of_creation, &user_credentials.password);
-        let hashed_password = User::salt_and_hash_string(&user_credentials.password, &datetime_of_creation);
+        let hashed_password = User::salt_and_hash_string(&user_credentials.password, &CustomeTimeStamp(datetime_of_creation));
 
         match sqlx::query("INSERT INTO users (username, password, email, datetime_of_creation) VALUES ($1, $2, $3, $4)")
             .bind(&user_credentials.username)
