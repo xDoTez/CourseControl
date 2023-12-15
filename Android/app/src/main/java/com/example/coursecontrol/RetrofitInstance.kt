@@ -14,6 +14,12 @@ interface ApiInterface {
     @Headers("Content-Type:application/json")
     @POST("users/login")
     fun signin(@Body info: LoginBody): Call<ResponseBody>
+
+    @Headers("Content-Type:application/json")
+    @POST("users/registration")
+    fun registerUser(
+        @Body info: UserBody
+    ): retrofit2.Call<ResponseBody>
 }
 class RetrofitInstance {
     companion object {
