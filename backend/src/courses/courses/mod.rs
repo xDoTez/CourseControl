@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use super::{session_token, CourseDataSortingOptions};
 use crate::database;
 use rocket::serde::Serialize;
@@ -78,6 +80,22 @@ pub async fn get_course(course_id: i32, connection: &mut PgConnection) -> Result
 pub enum GettingAllAddableCourses {
     Sucess(Vec<Course>),
     DatabaseError(String),
+    InvalidSessionToken,
+}
+
+impl Display for GettingAllAddableCourses {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                GettingAllAddableCourses::Sucess(_) => String::from("Success"),
+                GettingAllAddableCourses::DatabaseError(_) => String::from("DatabaseError"),
+                GettingAllAddableCourses::InvalidSessionToken =>
+                    String::from("InvalidSessionToken"),
+            }
+        )
+    }
 }
 
 impl Course {
@@ -89,6 +107,11 @@ impl Course {
             Ok(database_url) => database_url,
             Err(error) => return GettingAllAddableCourses::DatabaseError(error),
         };
+
+        match session_token.validate_token(&mut connection).await {
+            Ok(_) => {}
+            Err(_) => return GettingAllAddableCourses::InvalidSessionToken,
+        }
 
         let courses: Vec<Course> = match sqlx::query_as("SELECT c.id, c.name, c.semester, c.ects FROM courses c LEFT JOIN user_courses u_c ON c.id = u_c.course_id AND u_c.user_id = $1 AND u_c.is_active = true LEFT JOIN course_progam c_p ON c.id = c_p.course_id AND c_p.program_id = $2 WHERE u_c.id IS NULL AND c_p.course_id IS NOT NULL")
             .bind(&session_token.user)
