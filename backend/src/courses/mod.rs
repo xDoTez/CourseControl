@@ -1,5 +1,5 @@
 mod categories;
-mod courses;
+pub mod courses;
 mod subcategories;
 
 use std::fmt::Display;
@@ -76,9 +76,6 @@ impl Program {
         };
 
         GettingProgramsResult::Success(programs)
-    }
-    pub async fn get_all_addable_courses(&self, session_token: session_token::SessionToken) {
-        todo!();
     }
 }
 
