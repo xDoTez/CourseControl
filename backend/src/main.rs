@@ -233,6 +233,30 @@ async fn get_all_programs() -> Json<GettingProgramsResult> {
     })
 }
 
+#[derive(Deserialize)]
+struct GetAllAddableCoursesParams {
+    session_token: session_token::SessionToken,
+    program_id: i32
+}
+
+#[derive(Serialize)]
+struct GettingAllAddableProgramsResult {
+    status: String,
+    programs: Option<Vec<courses::courses::Course>>,
+    message: Option<String>
+}
+
+#[post("/get_all_addable_courses", format = "json", data = "<session_token_and_program_id>")]
+async fn get_all_addable_courses(session_token_and_program_id: Json<GetAllAddableCoursesParams>) -> Json<GettingAllAddableProgramsResult> {
+    let session_token_and_program_id = session_token_and_program_id.into_inner();
+
+    Json(match courses::courses::Course::get_all_addable_courses(session_token_and_program_id.session_token, session_token_and_program_id.program_id).await {
+        courses::courses::GettingAllAddableCourses::Sucess(programs) => GettingAllAddableProgramsResult { status: String::from("Success"), programs: Some(programs), message: None },
+        courses::courses::GettingAllAddableCourses::DatabaseError(error) => GettingAllAddableProgramsResult { status: String::from("DatabaseError"), programs: None, message: Some(error) }
+    })
+
+}
+
 #[launch]
 fn rocket() -> _ {
     rocket::build()
@@ -248,4 +272,5 @@ fn rocket() -> _ {
         )
         .mount("/something", routes![get_course_data, get_course_data_old])
         .mount("/programs", routes![get_all_programs])
+        .mount("/courses", routes![get_all_addable_courses])
 }
