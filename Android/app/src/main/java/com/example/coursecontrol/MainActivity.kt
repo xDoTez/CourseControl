@@ -1,5 +1,6 @@
 package com.example.coursecontrol
 
+
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
@@ -22,5 +23,6 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this@MainActivity, LoginActivity::class.java)
             startActivity(intent)
         }
+
     }
 }
