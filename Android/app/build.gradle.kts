@@ -78,5 +78,6 @@ dependencies {
     implementation ("com.squareup.retrofit2:adapter-rxjava2:2.4.0")
     implementation ("io.reactivex.rxjava2:rxjava:2.1.13")
     implementation ("io.reactivex.rxjava2:rxandroid:2.0.2")
+    implementation ("androidx.recyclerview:recyclerview:1.3.0")
     implementation ("com.google.android.gms:play-services-auth:17.0.0")
 }
