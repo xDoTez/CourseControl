@@ -1,5 +1,6 @@
 package com.example.coursecontrol
 
+
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
@@ -25,6 +26,5 @@ class MainActivity : AppCompatActivity() {
         btnHomeRegister.setOnClickListener {
             val intent = Intent(this@MainActivity, RegistrationActivity::class.java)
             startActivity(intent)
-        }
     }
 }

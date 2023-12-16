@@ -15,6 +15,9 @@
         android:theme="@style/Theme.CourseControl"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
+        <activity android:name=".CourseDisplayActivity"
+        android:exported="false"
+        android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
         <activity
             android:name=".BeginningActivity"
             android:exported="false"

@@ -1,31 +1,30 @@
 package com.example.coursecontrol
 
-import android.annotation.SuppressLint
+
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.view.View
+import android.util.Log
+
 import android.widget.Button
 import android.widget.EditText
-import android.widget.TextView
+
 import android.widget.Toast
 import com.example.coursecontrol.R.*
+import com.example.coursecontrol.util.SessionManager
 import com.google.gson.Gson
 import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.http.Body
-import retrofit2.http.POST
+
 
 class LoginActivity : AppCompatActivity() {
 
     private lateinit var etUsername: EditText
     private lateinit var etPassword: EditText
     private lateinit var btnLogin: Button
-
+    private lateinit var sessionManager: SessionManager
     lateinit var apiResponse: LoggedInUser
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,7 +34,7 @@ class LoginActivity : AppCompatActivity() {
         etUsername = findViewById(R.id.etUsername)
         etPassword = findViewById(R.id.etPassword)
         btnLogin = findViewById(R.id.btnLogin)
-
+        sessionManager = SessionManager(this)
         btnLogin.setOnClickListener {
             login(etUsername.text.toString(), etPassword.text.toString())
         }
@@ -60,8 +59,7 @@ class LoginActivity : AppCompatActivity() {
 
                         val gson = Gson()
                         val odgovor: LoggedInUser = gson.fromJson(responseBody, LoggedInUser::class.java)
-                        println(odgovor.session_token.user)
-
+                        sessionManager.saveSessionToken(odgovor.session_token)
                         handleSuccessfulLogin()
                     } else {
                         handleFailedLogin()
