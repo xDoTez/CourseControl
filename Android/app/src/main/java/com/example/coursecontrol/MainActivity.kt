@@ -23,6 +23,8 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this@MainActivity, LoginActivity::class.java)
             startActivity(intent)
         }
-
+        btnHomeRegister.setOnClickListener {
+            val intent = Intent(this@MainActivity, RegistrationActivity::class.java)
+            startActivity(intent)
     }
 }
