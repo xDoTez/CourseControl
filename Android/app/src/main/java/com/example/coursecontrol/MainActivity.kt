@@ -26,5 +26,6 @@ class MainActivity : AppCompatActivity() {
         btnHomeRegister.setOnClickListener {
             val intent = Intent(this@MainActivity, RegistrationActivity::class.java)
             startActivity(intent)
+        }
     }
 }
