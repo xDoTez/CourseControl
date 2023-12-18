@@ -122,6 +122,7 @@ impl User // impl block for user registrations
         }
 
         let datetime_of_creation = Local::now().naive_local();
+        println!("Password: {} | Timestamp: {}", &user_credentials.password, &CustomeTimeStamp(datetime_of_creation.clone()));
         let hashed_password = User::salt_and_hash_string(&user_credentials.password, &CustomeTimeStamp(datetime_of_creation));
 
         match sqlx::query("INSERT INTO users (username, password, email, datetime_of_creation) VALUES ($1, $2, $3, $4)")
@@ -273,9 +274,9 @@ impl User // impl block for user login
 
         let password_hashes_match = match user.datetime_of_creation
         {
-            Some(creation_datetime) => user.password.chars()
+            Some(creation_datetime) => { println!("timestamp: {}", creation_datetime);user.password.chars()
                 .zip(User::salt_and_hash_string(&user_login_credentials.password, &creation_datetime).chars())
-                .map(|(x, y)| x == y).filter(|x| !x).count() == 0,
+                .map(|(x, y)| x == y).filter(|x| !x).count() == 0},
             None => return UserLoginResult::MissingData
         };
 
