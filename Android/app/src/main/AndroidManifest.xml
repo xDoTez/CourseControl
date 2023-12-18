@@ -28,7 +28,6 @@
             android:name=".RegistrationActivity"
             android:exported="false"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
-        tools:targetApi="31">
         <activity
             android:name=".MainActivity"
             android:exported="true"
