@@ -269,7 +269,7 @@ impl User // impl block for user login
         let user = match users.iter().count()
         {
             1 => users.remove(0),
-            _ => return UserLoginResult::InvalidCredentials
+            _ => { println!("To many usesr"); return UserLoginResult::InvalidCredentials }
         };
 
         let password_hashes_match = match user.datetime_of_creation
