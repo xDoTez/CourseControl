@@ -21,7 +21,7 @@ pub struct Program {
 pub struct CourseData {
     course: courses::Course,
     course_user_data: courses::UserCourse,
-    catagories: Option<Vec<CategoryData>>,
+    categories: Option<Vec<CategoryData>>,
 }
 
 #[derive(Serialize)]
@@ -155,7 +155,7 @@ pub async fn get_all_course_for_user(
         results.push(CourseData {
             course: course,
             course_user_data: course_data,
-            catagories: match course_data.id {
+            categories: match course_data.id {
                 Some(id) => Some(
                     match get_all_categories_for_user(id, &mut connection).await {
                         Ok(cats) => cats,
