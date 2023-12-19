@@ -18,7 +18,9 @@ class CourseViewModel : ViewModel() {
     private val _courseDataLiveData = MutableLiveData<List<CourseData>>()
     val courseDataLiveData: LiveData<List<CourseData>>
         get() = _courseDataLiveData
-
+    private val _selectedCourseLiveData = MutableLiveData<CourseData>()
+    val selectedCourseLiveData: LiveData<CourseData>
+        get() = _selectedCourseLiveData
     suspend fun makeApiCall(sessionToken: SessionToken) {
         Log.d("SessionToken", "Expiration: ${sessionToken.expiration}")
         Log.d("SessionToken", "Token: ${sessionToken.session_token}")
@@ -60,6 +62,10 @@ class CourseViewModel : ViewModel() {
 
     private fun handleApiError(exception: Exception) {
         Log.e("CourseViewModel", "API call failed", exception)
+    }
+
+    fun selectCourse(courseData: CourseData) {
+        _selectedCourseLiveData.value = courseData
     }
 }
 

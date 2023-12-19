@@ -1,8 +1,10 @@
 package com.example.coursecontrol.model
 
+import com.google.gson.annotations.SerializedName
+import java.io.Serializable
+
 data class CategoryData(
-    val category: Category,
-    val categoryUserData: CategoryUserData,
-    val subcategories: List<SubcategoryData>,
-    val requirements: List<Requirement>
-)
+    @SerializedName("category") val category: Category,
+    @SerializedName("category_user_data") val categoryUserData: CategoryUserData,
+    @SerializedName("subcategories") val subcategories: List<SubcategoryData>
+): Serializable
