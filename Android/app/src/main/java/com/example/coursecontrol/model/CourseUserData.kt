@@ -1,8 +1,11 @@
 package com.example.coursecontrol.model
 
+import com.google.gson.annotations.SerializedName
+import java.io.Serializable
+
 data class CourseUserData(
-    val id: Int,
-    val userId: Int,
-    val courseId: Int,
-    val isActive: Boolean
-)
+    @SerializedName("id")val id: Int,
+    @SerializedName("user_id")val userId: Int,
+    @SerializedName("course_id")val courseId: Int,
+    @SerializedName("is_active")val isActive: Boolean
+): Serializable
