@@ -1,6 +1,6 @@
 use serde::{Serialize, Deserialize};
 use sqlx::{FromRow, PgConnection};
-use chrono::{NaiveDateTime, Local};
+use chrono::{NaiveDateTime, Local, Timelike, Datelike};
 use std::collections::hash_map::DefaultHasher;
 use std::fmt::{Display, Debug};
 use std::hash::{Hash, Hasher};
@@ -17,6 +17,25 @@ pub struct User
     password: String,
     email: String,
     datetime_of_creation: Option<NaiveDateTime>
+}
+
+struct CustomeTimeStamp(NaiveDateTime);
+
+impl Display for CustomeTimeStamp
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}-{:02}-{:02} {:02}:{:02}:{:02}.{:06}",
+            self.0.year(),
+            self.0.month(),
+            self.0.day(),
+            self.0.hour(),
+            self.0.minute(),
+            self.0.second(),
+            self.0.timestamp_subsec_micros()
+        )
+    }
 }
 
 impl User // impl block for misc routes
@@ -103,8 +122,7 @@ impl User // impl block for user registrations
         }
 
         let datetime_of_creation = Local::now().naive_local();
-        println!("Datetime: {}\nPassword passed: {}", datetime_of_creation, &user_credentials.password);
-        let hashed_password = User::salt_and_hash_string(&user_credentials.password, &datetime_of_creation);
+        let hashed_password = User::salt_and_hash_string(&user_credentials.password, &CustomeTimeStamp(datetime_of_creation));
 
         match sqlx::query("INSERT INTO users (username, password, email, datetime_of_creation) VALUES ($1, $2, $3, $4)")
             .bind(&user_credentials.username)
@@ -250,14 +268,14 @@ impl User // impl block for user login
         let user = match users.iter().count()
         {
             1 => users.remove(0),
-            _ => {println!("No or more than one user with this username were found"); return UserLoginResult::InvalidCredentials}
+            _ => return UserLoginResult::InvalidCredentials
         };
 
         let password_hashes_match = match user.datetime_of_creation
         {
-            Some(creation_datetime) => { println!("Datetime: {}\nPassword passed: {}", creation_datetime, &user_login_credentials.password); user.password.chars()
+            Some(creation_datetime) => user.password.chars()
                 .zip(User::salt_and_hash_string(&user_login_credentials.password, &creation_datetime).chars())
-                .map(|(x, y)| x == y).filter(|x| !x).count() == 0},
+                .map(|(x, y)| x == y).filter(|x| !x).count() == 0,
             None => return UserLoginResult::MissingData
         };
 
