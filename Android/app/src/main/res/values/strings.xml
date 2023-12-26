@@ -5,4 +5,5 @@
     <string name="settings">settings</string>
     <string name="logout">logout</string>
     <string name="username">Username</string>
+    <string name="report">report</string>
 </resources>

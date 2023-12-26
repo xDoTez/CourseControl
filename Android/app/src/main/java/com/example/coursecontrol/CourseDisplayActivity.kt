@@ -45,6 +45,11 @@ class CourseDisplayActivity : AppCompatActivity() {
                     Logout.logoutUser(this, Intent(this, MainActivity::class.java))
                     true
                 }
+                R.id.report -> {
+                    val intent = Intent(this, GenerateReportActivity::class.java)
+                    startActivity(intent)
+                    true
+                }
                 R.id.profile -> {
                     // Handle profile click as needed
                     true

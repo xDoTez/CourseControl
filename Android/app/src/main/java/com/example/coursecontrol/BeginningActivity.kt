@@ -18,6 +18,10 @@ class BeginningActivity : AppCompatActivity() {
         binding.bottomNavigation.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.logout -> Logout.logoutUser(this, Intent(this, MainActivity::class.java))
+                R.id.report -> {
+                    val intent = Intent(this, GenerateReportActivity::class.java)
+                    startActivity(intent)
+                }
                 R.id.profile -> {
                     val intent = Intent(this, CourseDisplayActivity::class.java)
                     startActivity(intent)
