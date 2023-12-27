@@ -14,7 +14,7 @@ pub struct Subcategory {
 pub struct CategorySubcategory {
     user_course_category_id: i32,
     pub subcategory_id: i32,
-    points: i32,
+    pub points: i32,
 }
 
 pub async fn get_user_subcategory(
@@ -86,5 +86,27 @@ impl Subcategory {
             Ok(_) => Ok(1),
             Err(error) => Err(format!("{}", error))
         }
+    }
+}
+
+pub enum ModifyingDataResult {
+    Success,
+    DatabaseError(String),
+}
+
+impl CategorySubcategory {
+    pub async fn modify_existing_data(&self, connection: &mut PgConnection) -> ModifyingDataResult {
+        match sqlx::query("UPDATE category_subcategories  points = $1 WHERE user_course_category_id = $2 AND subcategory_id = $3")
+            .bind(&self.points)
+            .bind(&self.user_course_category_id)
+            .bind(&self.subcategory_id)
+            .execute(connection)
+            .await
+            {
+                Ok(_) => {},
+                Err(error) => return ModifyingDataResult::DatabaseError(format!("{}", error))
+            };
+
+        ModifyingDataResult::Success
     }
 }

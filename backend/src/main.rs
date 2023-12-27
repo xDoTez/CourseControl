@@ -286,6 +286,24 @@ async fn get_all_addable_courses(
     )
 }
 
+#[derive(Deserialize)]
+struct CourseDataAndSessionToken {
+    session_token: session_token::SessionToken,
+    course_data: courses::CourseData
+}
+
+#[derive(Serialize)]
+struct CourseDataModificationResult {
+    status: String,
+    message: String
+}
+
+#[post("/modify_existing_course_data", format ="json", data = "<course_data>")]
+async fn modify_existing_course_data( course_data: Json<CourseDataAndSessionToken>) -> Json<CourseDataModificationResult> {
+    // Added the new function created in courses module here
+    todo!();
+}
+
 #[launch]
 fn rocket() -> _ {
     rocket::build()

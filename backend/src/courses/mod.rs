@@ -421,6 +421,8 @@ pub enum ModifyUserCourseDataResult {
     InvalidCourseId,
     NoCourseIdOnInput,
     CategoryGettingError(String),
+    UnequalCourseData(CourseComparingResult),
+    InvalidChangedData(CourseDataValidityResult),
 }
 
 pub async fn modify_user_course_data(
@@ -439,67 +441,197 @@ pub async fn modify_user_course_data(
 
     let course_id = match new_course_data.course.id {
         Some(id) => id,
-        None => return ModifyUserCourseDataResult::NoCourseIdOnInput
+        None => return ModifyUserCourseDataResult::NoCourseIdOnInput,
     };
 
-    let course = match courses::get_course(course_id, &mut connection).await
-    {
+    let course = match courses::get_course(course_id, &mut connection).await {
         Ok(course) => course,
-        Err(_) => return ModifyUserCourseDataResult::InvalidCourseId
+        Err(_) => return ModifyUserCourseDataResult::InvalidCourseId,
     };
 
-    let course_data = match courses::get_single_user_course_data(session_token, course_id, &mut connection).await
-    {
-        Ok(course_data) => course_data,
-        Err(error) => return ModifyUserCourseDataResult::DatabaseError(error)
-    };
+    let course_data =
+        match courses::get_single_user_course_data(session_token, course_id, &mut connection).await
+        {
+            Ok(course_data) => course_data,
+            Err(error) => return ModifyUserCourseDataResult::DatabaseError(error),
+        };
 
     let old_course_data = CourseData {
         course: course,
         course_user_data: course_data,
         categories: match get_all_categories_for_user(course_id, &mut connection).await {
             Ok(cats) => Some(cats),
-            Err(error) => return ModifyUserCourseDataResult::CategoryGettingError(error)
-        }
+            Err(error) => return ModifyUserCourseDataResult::CategoryGettingError(error),
+        },
     };
 
     // check validity of new data compared to data in database or compare course template to data
     // in database
+    match old_course_data.compare_course_template(&new_course_data) {
+        CourseComparingResult::Equal => {}
+        other => return ModifyUserCourseDataResult::UnequalCourseData(other),
+    };
+
+    // Check if the new data fits the template
+
+    match new_course_data.check_data_validity() {
+        CourseDataValidityResult::Valid => {}
+        other => return ModifyUserCourseDataResult::InvalidChangedData(other),
+    };
+
+    // Attempt to input the new data
 
     todo!();
 }
 
-enum CourseComparingResult {
+pub enum CourseComparingResult {
     Equal,
     CategoryNotEqual,
     SubcategoryNotEqual,
     CategoriesMissing,
-    SubcategoriesMissing
+    SubcategoriesMissing,
+}
+
+pub enum CourseDataValidityResult {
+    Valid,
+    InvalidSubcategory,
+    InvalidCategory,
+    InvalidSubcategorySum,
+    MissingCategory,
+}
+
+pub enum CourseDataModificationResult {
+    Success,
+    DatabaseError(String),
+    MissingCategoryId,
+    MissingCategories,
 }
 
 impl CourseData {
     fn compare_course_template(&self, new_course_data: &CourseData) -> CourseComparingResult {
-        match(self.categories.clone(), new_course_data.categories.clone()) {
+        match (self.categories.clone(), new_course_data.categories.clone()) {
             (Some(old), Some(new)) => {
-                for (old_cat, new_cat) in iproduct!(old.clone(), new.clone()).filter(|(x, y)| x.category.id == y.category.id) {
-                    if (old_cat.category.requirements != new_cat.category.requirements) || (old_cat.category.points != new_cat.category.points) {
+                for (old_cat, new_cat) in iproduct!(old.clone(), new.clone())
+                    .filter(|(x, y)| x.category.id == y.category.id)
+                {
+                    if (old_cat.category.requirements != new_cat.category.requirements)
+                        || (old_cat.category.points != new_cat.category.points)
+                    {
                         return CourseComparingResult::CategoryNotEqual;
                     }
                     match (old_cat.subcategories, new_cat.subcategories) {
                         (Some(old_subcats), Some(new_subcats)) => {
-                            if iproduct!(old_subcats, new_subcats).filter(|(x, y)| x.subcategory.requirements != y.subcategory.requirements || x.subcategory.points != y.subcategory.points).count() != 0 {
+                            if iproduct!(old_subcats, new_subcats)
+                                .filter(|(x, y)| {
+                                    x.subcategory.requirements != y.subcategory.requirements
+                                        || x.subcategory.points != y.subcategory.points
+                                })
+                                .count()
+                                != 0
+                            {
                                 return CourseComparingResult::SubcategoryNotEqual;
                             }
-                        },
-                        (None, None) => {},
-                        (Some(_), None) | (None, Some(_)) => return CourseComparingResult::SubcategoriesMissing
+                        }
+                        (None, None) => {}
+                        (Some(_), None) | (None, Some(_)) => {
+                            return CourseComparingResult::SubcategoriesMissing
+                        }
                     };
                 }
-            },
+            }
             (None, None) => return CourseComparingResult::CategoriesMissing,
-            (Some(_), None) | (None, Some(_)) => return CourseComparingResult::CategoriesMissing
+            (Some(_), None) | (None, Some(_)) => return CourseComparingResult::CategoriesMissing,
         };
 
         CourseComparingResult::Equal
+    }
+
+    fn check_data_validity(&self) -> CourseDataValidityResult {
+        match &self.categories {
+            Some(cats) => {
+                if cats.len() == 0 {
+                    return CourseDataValidityResult::MissingCategory;
+                } else {
+                    for category in cats {
+                        if category.category.points < category.category_user_data.points {
+                            return CourseDataValidityResult::InvalidCategory;
+                        } else {
+                            match &category.subcategories {
+                                Some(subcategories) => match subcategories
+                                    .iter()
+                                    .filter(|x| {
+                                        x.subcategory.points < x.subcategory_user_data.points
+                                    })
+                                    .count()
+                                    == 0
+                                {
+                                    true => {
+                                        let sum: i32 = subcategories
+                                            .iter()
+                                            .map(|x| x.subcategory_user_data.points)
+                                            .sum();
+                                        match sum == category.category_user_data.points {
+                                        true => return CourseDataValidityResult::Valid,
+                                        false => return CourseDataValidityResult::InvalidSubcategorySum
+                                    }
+                                    }
+                                    false => return CourseDataValidityResult::InvalidSubcategory,
+                                },
+                                None => return CourseDataValidityResult::Valid,
+                            };
+                        };
+                    }
+                };
+            }
+            None => return CourseDataValidityResult::MissingCategory,
+        };
+
+        CourseDataValidityResult::Valid
+    }
+
+    async fn modfiy_existing_course_data(
+        &self,
+        connection: &mut PgConnection
+    ) -> CourseDataModificationResult {
+
+        let mut subcategory_data: Vec<SubcategoryData> = Vec::new();
+        match &self.categories {
+            Some(cats) => {
+                for category in cats {
+                    match category
+                        .category_user_data
+                        .modify_existing_data(connection)
+                        .await
+                    {
+                        categories::ModifyingDataResult::Success => match &category.subcategories {
+                            Some(subcats) => subcategory_data.append(&mut subcats.clone()),
+                            None => {}
+                        },
+                        categories::ModifyingDataResult::DatabaseError(error) => {
+                            return CourseDataModificationResult::DatabaseError(error)
+                        }
+                        categories::ModifyingDataResult::MissingId => {
+                            return CourseDataModificationResult::MissingCategoryId
+                        }
+                    }
+                }
+            }
+            None => return CourseDataModificationResult::MissingCategories,
+        };
+
+        for subcat in subcategory_data {
+            match subcat
+                .subcategory_user_data
+                .modify_existing_data(connection)
+                .await
+            {
+                subcategories::ModifyingDataResult::Success => {}
+                subcategories::ModifyingDataResult::DatabaseError(error) => {
+                    return CourseDataModificationResult::DatabaseError(error)
+                }
+            };
+        }
+
+        CourseDataModificationResult::Success
     }
 }

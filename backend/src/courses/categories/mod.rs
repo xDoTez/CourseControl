@@ -1,6 +1,8 @@
 use rocket::serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgConnection, Row};
 
+use super::{subcategories::CategorySubcategory, ModifyUserCourseDataResult};
+
 #[derive(Serialize, Deserialize, FromRow, Clone)]
 pub struct Category {
     pub id: Option<i32>,
@@ -15,7 +17,7 @@ pub struct CourseCategory {
     pub id: Option<i32>,
     user_course_id: i32,
     pub category_id: i32,
-    points: i32,
+    pub points: i32,
 }
 
 pub async fn get_user_categories(
@@ -90,5 +92,30 @@ impl Category {
             Ok(result) => Ok(result.get("id")),
             Err(error) => Err(format!("{}", error))
         }
+    }
+}
+
+pub enum ModifyingDataResult {
+    Success,
+    DatabaseError(String),
+    MissingId,
+}
+
+impl CourseCategory {
+    pub async fn modify_existing_data(&self, connection: &mut PgConnection) -> ModifyingDataResult {
+        match self.id {
+            Some(id) => match sqlx::query("UPDATE course_categories points = $1 WHERE id = $2")
+                .bind(&self.points)
+                .bind(&id)
+                .execute(connection)
+                .await
+            {
+                Ok(_) => {}
+                Err(error) => return ModifyingDataResult::DatabaseError(format!("{}", error)),
+            },
+            None => return ModifyingDataResult::MissingId,
+        }
+
+        ModifyingDataResult::Success
     }
 }
