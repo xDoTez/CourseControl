@@ -1,16 +1,16 @@
-use rocket::serde::Serialize;
+use rocket::serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgConnection, Row};
 
-#[derive(Serialize, FromRow)]
+#[derive(Serialize, Deserialize, FromRow, Clone)]
 pub struct Category {
     pub id: Option<i32>,
     course_id: i32,
     name: String,
-    points: i32,
-    requirements: i32,
+    pub points: i32,
+    pub requirements: i32,
 }
 
-#[derive(Serialize, FromRow, Clone, Copy)]
+#[derive(Serialize, Deserialize, FromRow, Clone, Copy)]
 pub struct CourseCategory {
     pub id: Option<i32>,
     user_course_id: i32,

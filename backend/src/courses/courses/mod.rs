@@ -2,10 +2,10 @@ use std::fmt::Display;
 
 use super::{session_token, CourseDataSortingOptions};
 use crate::database;
-use rocket::serde::Serialize;
+use rocket::serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgConnection, Row};
 
-#[derive(Serialize, FromRow, Clone)]
+#[derive(Serialize, Deserialize, FromRow, Clone)]
 pub struct Course {
     pub id: Option<i32>,
     name: String,
@@ -13,7 +13,7 @@ pub struct Course {
     ects: i32,
 }
 
-#[derive(Serialize, FromRow, Clone, Copy)]
+#[derive(Serialize, Deserialize, FromRow, Clone, Copy)]
 pub struct UserCourse {
     pub id: Option<i32>,
     user_id: i32,
@@ -37,6 +37,24 @@ pub async fn get_user_course_data(
     {
         Ok(data) => data,
         Err(error) => return Err(format!("{}", error)),
+    };
+
+    Ok(user_course)
+}
+
+pub async fn get_single_user_course_data(
+    session_token: session_token::SessionToken,
+    course_id: i32,
+    connection: &mut PgConnection,
+) -> Result<UserCourse, String> {
+    let user_course: UserCourse = match sqlx::query_as("SELECT id, user_id, course_id, is_active FROM user_course WHERE user_id = $1 AND course_id = $2 AND is_active = true")
+        .bind(&session_token.user)
+        .bind(&course_id)
+        .fetch_one(connection)
+        .await
+    {
+        Ok(user_course) => user_course,
+        Err(error) => return Err(format!("{}", error))
     };
 
     Ok(user_course)
