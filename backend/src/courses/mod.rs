@@ -571,13 +571,13 @@ impl CourseData {
                                             .map(|x| x.subcategory_user_data.points)
                                             .sum();
                                         match sum == category.category_user_data.points {
-                                        true => return CourseDataValidityResult::Valid,
+                                        true => {},
                                         false => return CourseDataValidityResult::InvalidSubcategorySum
                                     }
                                     }
                                     false => return CourseDataValidityResult::InvalidSubcategory,
                                 },
-                                None => return CourseDataValidityResult::Valid,
+                                None => {},
                             };
                         };
                     }
