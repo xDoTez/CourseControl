@@ -1,21 +1,21 @@
-use rocket::serde::Serialize;
+use rocket::serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgConnection, Row};
 
-#[derive(Serialize, FromRow)]
+#[derive(Serialize, Deserialize, FromRow, Clone)]
 pub struct Category {
     pub id: Option<i32>,
     course_id: i32,
     name: String,
-    points: i32,
-    requirements: i32,
+    pub points: i32,
+    pub requirements: i32,
 }
 
-#[derive(Serialize, FromRow, Clone, Copy)]
+#[derive(Serialize, Deserialize, FromRow, Clone, Copy)]
 pub struct CourseCategory {
     pub id: Option<i32>,
     user_course_id: i32,
     pub category_id: i32,
-    points: i32,
+    pub points: i32,
 }
 
 pub async fn get_user_categories(
@@ -90,5 +90,31 @@ impl Category {
             Ok(result) => Ok(result.get("id")),
             Err(error) => Err(format!("{}", error))
         }
+    }
+}
+
+pub enum ModifyingDataResult {
+    Success,
+    DatabaseError(String),
+    MissingId,
+}
+
+impl CourseCategory {
+    pub async fn modify_existing_data(&self, connection: &mut PgConnection) -> ModifyingDataResult {
+        match self.id {
+            Some(id) => {
+                let query = format!(
+                    "UPDATE course_categories SET points = {} WHERE id = {}",
+                    self.points, id
+                );
+                match sqlx::query(&query).execute(connection).await {
+                    Ok(_) => {}
+                    Err(error) => return ModifyingDataResult::DatabaseError(format!("{}", error)),
+                }
+            }
+            None => return ModifyingDataResult::MissingId,
+        }
+
+        ModifyingDataResult::Success
     }
 }
