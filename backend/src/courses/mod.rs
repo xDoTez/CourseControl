@@ -423,6 +423,27 @@ pub enum ModifyUserCourseDataResult {
     CategoryGettingError(String),
     UnequalCourseData(CourseComparingResult),
     InvalidChangedData(CourseDataValidityResult),
+    DataModificationError(CourseDataModificationResult),
+}
+
+impl ModifyUserCourseDataResult {
+    pub fn to_string(&self) -> String {
+        match self {
+            ModifyUserCourseDataResult::Success => String::from("Success"),
+            ModifyUserCourseDataResult::InvalidSessionToken => String::from("InvalidSessionToken"),
+            ModifyUserCourseDataResult::DatabaseError(_) => String::from("DatabaseError"),
+            ModifyUserCourseDataResult::InvalidCourseId => String::from("InvalidCourseId"),
+            ModifyUserCourseDataResult::NoCourseIdOnInput => String::from("NoCourseIdOnInput"),
+            ModifyUserCourseDataResult::CategoryGettingError(_) => {
+                String::from("CategoryGettingError")
+            }
+            ModifyUserCourseDataResult::UnequalCourseData(_) => String::from("UnequalCourseData"),
+            ModifyUserCourseDataResult::InvalidChangedData(_) => String::from("InvalidChnagedData"),
+            ModifyUserCourseDataResult::DataModificationError(_) => {
+                String::from("DataModificationError")
+            }
+        }
+    }
 }
 
 pub async fn modify_user_course_data(
@@ -480,8 +501,16 @@ pub async fn modify_user_course_data(
     };
 
     // Attempt to input the new data
-
-    todo!();
+    match new_course_data
+        .modfiy_existing_course_data(&mut connection)
+        .await
+    {
+        CourseDataModificationResult::Success => ModifyUserCourseDataResult::Success,
+        CourseDataModificationResult::DatabaseError(error) => {
+            ModifyUserCourseDataResult::DatabaseError(error)
+        }
+        other => ModifyUserCourseDataResult::DataModificationError(other),
+    }
 }
 
 pub enum CourseComparingResult {
@@ -492,6 +521,18 @@ pub enum CourseComparingResult {
     SubcategoriesMissing,
 }
 
+impl CourseComparingResult {
+    pub fn to_string(&self) -> String {
+        match self {
+            CourseComparingResult::Equal => String::from("Equal"),
+            CourseComparingResult::CategoryNotEqual => String::from("CategoriesMissing"),
+            CourseComparingResult::SubcategoryNotEqual => String::from("SubcategoryNotEqual"),
+            CourseComparingResult::CategoriesMissing => String::from("CategoriesMissing"),
+            CourseComparingResult::SubcategoriesMissing => String::from("SubcategoriesMissing"),
+        }
+    }
+}
+
 pub enum CourseDataValidityResult {
     Valid,
     InvalidSubcategory,
@@ -500,11 +541,36 @@ pub enum CourseDataValidityResult {
     MissingCategory,
 }
 
+impl CourseDataValidityResult {
+    pub fn to_string(&self) -> String {
+        match self {
+            CourseDataValidityResult::Valid => String::from("Valid"),
+            CourseDataValidityResult::InvalidSubcategory => String::from("InvalidSubcategory"),
+            CourseDataValidityResult::InvalidCategory => String::from("InvalidCategory"),
+            CourseDataValidityResult::InvalidSubcategorySum => {
+                String::from("InvalidSubcategorySum")
+            }
+            CourseDataValidityResult::MissingCategory => String::from("MissingCategory"),
+        }
+    }
+}
+
 pub enum CourseDataModificationResult {
     Success,
     DatabaseError(String),
     MissingCategoryId,
     MissingCategories,
+}
+
+impl CourseDataModificationResult {
+    pub fn to_string(&self) -> String {
+        match self {
+            CourseDataModificationResult::Success => String::from("Success"),
+            CourseDataModificationResult::DatabaseError(_) => String::from("DatabaseError"),
+            CourseDataModificationResult::MissingCategoryId => String::from("MissingCategoryId"),
+            CourseDataModificationResult::MissingCategories => String::from("MissingCategories"),
+        }
+    }
 }
 
 impl CourseData {
@@ -565,19 +631,22 @@ impl CourseData {
                                     .count()
                                     == 0
                                 {
-                                    true => {
-                                        let sum: i32 = subcategories
-                                            .iter()
-                                            .map(|x| x.subcategory_user_data.points)
-                                            .sum();
-                                        match sum == category.category_user_data.points {
-                                        true => {},
-                                        false => return CourseDataValidityResult::InvalidSubcategorySum
-                                    }
-                                    }
+                                    true => match subcategories.len() != 0 {
+                                        true => {
+                                            let sum: i32 = subcategories
+                                                .iter()
+                                                .map(|x| x.subcategory_user_data.points)
+                                                .sum();
+                                            match sum == category.category_user_data.points {
+                                                true => {},
+                                                false => return CourseDataValidityResult::InvalidSubcategorySum,
+                                            }
+                                        }
+                                        false => {}
+                                    },
                                     false => return CourseDataValidityResult::InvalidSubcategory,
                                 },
-                                None => {},
+                                None => {}
                             };
                         };
                     }
@@ -591,9 +660,8 @@ impl CourseData {
 
     async fn modfiy_existing_course_data(
         &self,
-        connection: &mut PgConnection
+        connection: &mut PgConnection,
     ) -> CourseDataModificationResult {
-
         let mut subcategory_data: Vec<SubcategoryData> = Vec::new();
         match &self.categories {
             Some(cats) => {
