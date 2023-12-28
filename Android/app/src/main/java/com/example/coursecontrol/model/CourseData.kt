@@ -6,5 +6,5 @@ import java.io.Serializable
 data class CourseData(
     @SerializedName("course")val course: Course,
     @SerializedName("course_user_data")val courseUserData: CourseUserData,
-    @SerializedName("catagories")val catagories: List<CategoryData>
+    @SerializedName("categories")val catagories: List<CategoryData>
 ): Serializable

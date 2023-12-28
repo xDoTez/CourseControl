@@ -32,7 +32,6 @@ class CourseDisplayActivity : AppCompatActivity() {
 
         viewModel.courseDataLiveData.observe(this, Observer { courseDataList ->
             val userDataAdapter = UserDataAdapter(courseDataList) { selectedCourseData ->
-                // Handle the item click event here
                 onCourseItemSelected(selectedCourseData)
             }
             recyclerView.adapter = userDataAdapter
@@ -51,7 +50,6 @@ class CourseDisplayActivity : AppCompatActivity() {
                     true
                 }
                 R.id.profile -> {
-                    // Handle profile click as needed
                     true
                 }
                 else -> false
@@ -64,7 +62,6 @@ class CourseDisplayActivity : AppCompatActivity() {
                 if (sessionToken != null) {
                     viewModel.makeApiCall(sessionToken)
                 } else {
-                    // Handle the case when the session token is null
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
