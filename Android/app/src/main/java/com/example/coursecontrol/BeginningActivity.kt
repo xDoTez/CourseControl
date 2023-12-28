@@ -19,7 +19,7 @@ class BeginningActivity : AppCompatActivity() {
             when (item.itemId) {
                 R.id.logout -> Logout.logoutUser(this, Intent(this, MainActivity::class.java))
                 R.id.report -> {
-                    val intent = Intent(this, GenerateReportActivity::class.java)
+                    val intent = Intent(this, GenerateReportManagerActivity::class.java)
                     startActivity(intent)
                 }
                 R.id.profile -> {

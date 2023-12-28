@@ -6,6 +6,7 @@
     android:layout_height="match_parent">
 
     <LinearLayout
+        android:id="@+id/ModularLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
@@ -24,20 +25,7 @@
             android:textColor="@color/black"
             android:fontFamily="sans-serif" />
 
-        <Button
-            android:layout_width="200dp"
-            android:layout_marginTop="30sp"
-            android:layout_height="wrap_content"
-            android:background="#BD1111"
-            android:drawableStart="@drawable/pdf_logo_white"
-            android:textColor="@color/white"
-            android:id="@+id/ButtonTest"
-            android:paddingTop="15dp"
-            android:paddingStart="30dp"
-            android:paddingEnd="30dp"
-            android:paddingBottom="15dp"
-            android:drawablePadding="15dp"
-            android:text="Generate PDF" />
+
 
     </LinearLayout>
 

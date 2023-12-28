@@ -46,7 +46,7 @@ class CourseDisplayActivity : AppCompatActivity() {
                     true
                 }
                 R.id.report -> {
-                    val intent = Intent(this, GenerateReportActivity::class.java)
+                    val intent = Intent(this, GenerateReportManagerActivity::class.java)
                     startActivity(intent)
                     true
                 }
