@@ -15,16 +15,11 @@ import com.example.coursecontrol.model.CourseData
 import java.io.File
 
 
-class GenerateReportPdf private constructor(): GenerateReport {
-    companion object{
-        private var instance: GenerateReportPdf = GenerateReportPdf()
-        fun getInstance(): GenerateReportPdf{
-            return instance
-        }
-    }
+class GenerateReportPdf: GenerateReport {
+
     private var courseDataList = mutableListOf<CourseData>()
 
-    fun generatePdf(){
+    override fun generateReport(){
         val doc = PdfDocument()
 
         for(courseData in courseDataList){
@@ -118,9 +113,7 @@ class GenerateReportPdf private constructor(): GenerateReport {
         for(course in courseDataList){
             this.courseDataList.add(course)
         }
-        //this.courseDataList = courseDataList
     }
-
 
 }
 
