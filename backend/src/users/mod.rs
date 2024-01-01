@@ -9,6 +9,8 @@ use crate::database;
 use crate::regex_checks;
 use crate::session_token;
 
+pub mod admin;
+
 #[derive(FromRow, Debug, Serialize, Deserialize)]
 pub struct User {
     pub id: Option<i32>,
@@ -18,7 +20,7 @@ pub struct User {
     datetime_of_creation: Option<NaiveDateTime>,
 }
 
-struct CustomeTimeStamp(NaiveDateTime);
+pub struct CustomeTimeStamp(NaiveDateTime);
 
 impl Display for CustomeTimeStamp {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

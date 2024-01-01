@@ -347,6 +347,46 @@ async fn modify_existing_course_data(
     })
 }
 
+#[derive(Deserialize)]
+struct UserIdSessionToken {
+    user_id: i32,
+    session_token: session_token::SessionToken,
+}
+
+#[derive(Serialize)]
+struct AdminAddingResult {
+    status: String,
+    message: Option<String>,
+}
+
+#[post(
+    "/add_new_admin",
+    format = "json",
+    data = "<user_id_and_session_token>"
+)]
+async fn add_new_admin(
+    user_id_and_session_token: Json<UserIdSessionToken>,
+) -> Json<AdminAddingResult> {
+    let user_id_and_session_token = user_id_and_session_token.into_inner();
+
+    let result = users::admin::Admin::add_new_admin(
+        user_id_and_session_token.user_id,
+        user_id_and_session_token.session_token,
+    )
+    .await;
+
+    Json(match &result {
+        users::admin::AddingNewAdminResult::DatabaseError(error) => AdminAddingResult {
+            status: result.to_string(),
+            message: Some(error.clone()),
+        },
+        other => AdminAddingResult {
+            status: other.to_string(),
+            message: None,
+        },
+    })
+}
+
 #[launch]
 fn rocket() -> _ {
     rocket::build()
@@ -366,4 +406,5 @@ fn rocket() -> _ {
             "/courses",
             routes![get_all_addable_courses, modify_existing_course_data],
         )
+        .mount("/admin", routes![add_new_admin])
 }

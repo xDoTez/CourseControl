@@ -97,13 +97,10 @@ pub enum ModifyingDataResult {
 impl CategorySubcategory {
     pub async fn modify_existing_data(&self, connection: &mut PgConnection) -> ModifyingDataResult {
         let query = format!("UPDATE category_subcategories SET points = {} WHERE user_course_category_id = {} AND subcategory_id = {}", self.points, self.user_course_category_id, self.subcategory_id);
-        match sqlx::query(&query)
-            .execute(connection)
-            .await
-            {
-                Ok(_) => {},
-                Err(error) => return ModifyingDataResult::DatabaseError(format!("{}", error))
-            };
+        match sqlx::query(&query).execute(connection).await {
+            Ok(_) => {}
+            Err(error) => return ModifyingDataResult::DatabaseError(format!("{}", error)),
+        };
 
         ModifyingDataResult::Success
     }
