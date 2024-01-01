@@ -29,7 +29,7 @@ impl ToString for AddingNewAdminResult {
     }
 }
 
-impl Admin // impl block for adding new admins
+impl Admin // impl block for adding new adminss
 {
     pub async fn add_new_admin(
         user_id: i32,
