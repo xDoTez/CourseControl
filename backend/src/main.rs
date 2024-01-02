@@ -387,6 +387,42 @@ async fn add_new_admin(
     })
 }
 
+#[derive(Serialize)]
+struct GettingAllNonAdminsResult {
+    status: String,
+    message: Option<String>,
+    users: Option<Vec<users::User>>,
+}
+
+#[post("/get_all_non_admins", format = "json", data = "<session_token>")]
+async fn get_all_non_admins(
+    session_token: Json<session_token::SessionToken>,
+) -> Json<GettingAllNonAdminsResult> {
+    let session_token = session_token.into_inner();
+
+    let result = users::admin::Admin::get_all_non_admins(session_token).await;
+
+    Json(match &result {
+        users::admin::GettingAllNonAdminsResult::Success(users) => GettingAllNonAdminsResult {
+            status: result.to_string(),
+            message: None,
+            users: Some(users.to_vec()),
+        },
+        users::admin::GettingAllNonAdminsResult::DatabaseError(error) => {
+            GettingAllNonAdminsResult {
+                status: result.to_string(),
+                message: Some(error.clone()),
+                users: None,
+            }
+        }
+        other => GettingAllNonAdminsResult {
+            status: other.to_string(),
+            message: None,
+            users: None,
+        },
+    })
+}
+
 #[launch]
 fn rocket() -> _ {
     rocket::build()
@@ -406,5 +442,5 @@ fn rocket() -> _ {
             "/courses",
             routes![get_all_addable_courses, modify_existing_course_data],
         )
-        .mount("/admin", routes![add_new_admin])
+        .mount("/admin", routes![add_new_admin, get_all_non_admins])
 }
