@@ -4,6 +4,7 @@ import UserDataAdapter
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.widget.Button
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
@@ -19,6 +20,11 @@ import kotlinx.coroutines.launch
 class CourseDisplayActivity : AppCompatActivity() {
     private val viewModel: CourseViewModel by viewModels()
     private lateinit var sessionManager: SessionManager
+
+    private lateinit var btnAlphAsc: Button
+    private lateinit var btnAlphDesc: Button
+    private lateinit var btnSemAsc: Button
+    private lateinit var btnSemDesc: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,6 +71,70 @@ class CourseDisplayActivity : AppCompatActivity() {
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
+            }
+        }
+
+        btnAlphAsc = findViewById(R.id.alphabeticAsc)
+        btnAlphAsc.setOnClickListener {
+            lifecycleScope.launch {
+                try {
+                    val sessionToken = sessionManager.getSessionToken()
+                    if (sessionToken != null) {
+                        viewModel.clearCourseData()
+                        viewModel.makeApiCallForSortingAlphAsc(sessionToken)
+                    } else {
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+
+        btnAlphDesc = findViewById(R.id.alphabeticDesc)
+        btnAlphDesc.setOnClickListener {
+            lifecycleScope.launch {
+                try {
+                    val sessionToken = sessionManager.getSessionToken()
+                    if (sessionToken != null) {
+                        viewModel.clearCourseData()
+                        viewModel.makeApiCallForSortingAlphDesc(sessionToken)
+                    } else {
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+
+        btnSemAsc = findViewById(R.id.semesterAsc)
+        btnSemAsc.setOnClickListener {
+            lifecycleScope.launch {
+                try {
+                    val sessionToken = sessionManager.getSessionToken()
+                    if (sessionToken != null) {
+                        viewModel.clearCourseData()
+                        viewModel.makeApiCallForSortingSemAsc(sessionToken)
+                    } else {
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+
+        btnSemDesc = findViewById(R.id.semesterDesc)
+        btnSemDesc.setOnClickListener {
+            lifecycleScope.launch {
+                try {
+                    val sessionToken = sessionManager.getSessionToken()
+                    if (sessionToken != null) {
+                        viewModel.clearCourseData()
+                        viewModel.makeApiCallForSortingSemDesc(sessionToken)
+                    } else {
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
         }
     }
