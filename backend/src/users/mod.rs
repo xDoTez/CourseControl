@@ -11,7 +11,7 @@ use crate::session_token;
 
 pub mod admin;
 
-#[derive(FromRow, Debug, Serialize, Deserialize)]
+#[derive(FromRow, Debug, Serialize, Deserialize, Clone)]
 pub struct User {
     pub id: Option<i32>,
     username: String,

@@ -2,6 +2,8 @@ use crate::{database, session_token};
 use chrono::{Local, NaiveDateTime};
 use sqlx::{prelude::FromRow, PgConnection};
 
+use super::User;
+
 #[derive(FromRow)]
 pub struct Admin {
     id: i32,
@@ -121,5 +123,68 @@ impl Admin // impl block for adding new adminss
             Ok(_) => Ok(()),
             Err(error) => Err(format!("{}", error)),
         }
+    }
+}
+
+pub enum GettingAllNonAdminsResult {
+    Success(Vec<User>),
+    DatabaseError(String),
+    InvalidSessionToken,
+    RequestMadeByNonAdmin,
+}
+
+impl ToString for GettingAllNonAdminsResult {
+    fn to_string(&self) -> String {
+        match self {
+            GettingAllNonAdminsResult::Success(_) => String::from("Success"),
+            GettingAllNonAdminsResult::DatabaseError(_) => String::from("DatabaseError"),
+            GettingAllNonAdminsResult::InvalidSessionToken => String::from("InvalidSessionToken"),
+            GettingAllNonAdminsResult::RequestMadeByNonAdmin => {
+                String::from("RequestMadeByNonAdmin")
+            }
+        }
+    }
+}
+
+impl Admin // impl block for returning a list of all non-admin users
+{
+    pub async fn get_all_non_admins(
+        session_token: session_token::SessionToken,
+    ) -> GettingAllNonAdminsResult {
+        let mut connection = match database::establish_connection_to_database().await {
+            Ok(database_url) => database_url,
+            Err(error) => return GettingAllNonAdminsResult::DatabaseError(error),
+        };
+
+        match session_token.validate_token(&mut connection).await {
+            Ok(valid) => match valid {
+                true => {}
+                false => return GettingAllNonAdminsResult::InvalidSessionToken,
+            },
+            Err(_) => return GettingAllNonAdminsResult::InvalidSessionToken,
+        };
+
+        match Admin::check_if_session_token_belongs_to_admin(session_token, &mut connection).await {
+            Ok(valid) => match valid {
+                true => {}
+                false => return GettingAllNonAdminsResult::RequestMadeByNonAdmin,
+            },
+            Err(error) => return GettingAllNonAdminsResult::DatabaseError(error),
+        };
+
+        match Admin::get_all_non_admin_users(&mut connection).await {
+            Ok(users) => GettingAllNonAdminsResult::Success(users),
+            Err(error) => GettingAllNonAdminsResult::DatabaseError(error),
+        }
+    }
+
+    async fn get_all_non_admin_users(connection: &mut PgConnection) -> Result<Vec<User>, String> {
+        let _users: Vec<User> = match sqlx::query_as("SELECT users.id, username, password, email, datetime_of_creation FROM users LEFT JOIN admins ON users.id = admins.user_id WHERE admins.id IS NULL")
+            .fetch_all(connection)
+            .await
+            {
+                Ok(users) => return Ok(users),
+                Err(error) => return Err(format!("{}", error))
+            };
     }
 }
