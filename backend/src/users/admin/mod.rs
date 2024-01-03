@@ -6,9 +6,9 @@ use super::User;
 
 #[derive(FromRow)]
 pub struct Admin {
-    id: i32,
-    user_id: i32,
-    time_added: NaiveDateTime,
+    _id: i32,
+    _user_id: i32,
+    _time_added: NaiveDateTime,
 }
 
 pub enum AddingNewAdminResult {
@@ -76,7 +76,7 @@ impl Admin // impl block for adding new adminss
         }
     }
 
-    async fn check_if_session_token_belongs_to_admin(
+    pub async fn check_if_session_token_belongs_to_admin(
         session_token: session_token::SessionToken,
         connection: &mut PgConnection,
     ) -> Result<bool, String> {

@@ -105,3 +105,35 @@ impl CategorySubcategory {
         ModifyingDataResult::Success
     }
 }
+
+#[derive(Clone, Deserialize)]
+pub struct NewSubcategory {
+    pub category_id: Option<i32>,
+    pub name: String,
+    pub points: i32,
+    pub requirements: i32,
+}
+
+impl NewSubcategory // impl block for adding new courses
+{
+    pub async fn insert_new_subcategory(
+        &self,
+        connection: &mut PgConnection,
+    ) -> Result<(), String> {
+        match &self.category_id {
+            None => Err(String::from("Missing category id")),
+            Some(id) => {
+                match sqlx::query("INSERT INTO subcategories(category_id, name, points, requirements) VALUES ($1, $2, $3, $4)")
+                    .bind(&id)
+                    .bind(&self.name)
+                    .bind(&self.points)
+                    .bind(&self.requirements)
+                    .execute(connection)
+                    .await {
+                        Ok(_) => Ok(()),
+                        Err(error) => Err(format!("{}", error))
+                    }
+            }
+        }
+    }
+}
