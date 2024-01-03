@@ -427,6 +427,7 @@ async fn get_all_non_admins(
 struct AddingNewCourseStruct {
     session_token: session_token::SessionToken,
     new_course: courses::courses::NewCourse,
+    program_id: Vec<i32>,
 }
 
 #[derive(Serialize)]
@@ -445,7 +446,10 @@ async fn add_new_course(
 ) -> Json<AddingNewCourseResult> {
     let mut data = adding_new_course_struct.into_inner();
 
-    let result = data.new_course.add_new_course(data.session_token).await;
+    let result = data
+        .new_course
+        .add_new_course(data.session_token, data.program_id)
+        .await;
 
     Json(match &result {
         courses::courses::AddingNewCourseResult::DatabaseError(error) => AddingNewCourseResult {

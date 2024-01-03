@@ -192,6 +192,7 @@ impl NewCourse {
     pub async fn add_new_course(
         &mut self,
         session_token: session_token::SessionToken,
+        program_ids: Vec<i32>,
     ) -> AddingNewCourseResult {
         let mut connection = match database::establish_connection_to_database().await {
             Ok(con) => con,
@@ -255,6 +256,23 @@ impl NewCourse {
                     return AddingNewCourseResult::InsertDatabaseError((course_id, error))
                 }
             };
+        }
+
+        for program_id in program_ids {
+            match sqlx::query("INSERT INTO course_progam(course_id, program_id) VALUES ($1, $2)")
+                .bind(&course_id)
+                .bind(&program_id)
+                .execute(&mut connection)
+                .await
+            {
+                Ok(_) => {}
+                Err(error) => {
+                    return AddingNewCourseResult::InsertDatabaseError((
+                        course_id,
+                        format!("{}", error),
+                    ))
+                }
+            }
         }
 
         AddingNewCourseResult::Success
