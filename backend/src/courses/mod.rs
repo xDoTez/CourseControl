@@ -6,10 +6,10 @@ use std::fmt::Display;
 
 use crate::database;
 use crate::session_token;
+use crate::users;
 use itertools::iproduct;
 use rocket::serde::{Deserialize, Serialize};
-use sqlx::prelude::FromRow;
-use sqlx::PgConnection;
+use sqlx::{prelude::FromRow, PgConnection};
 
 #[derive(Serialize, FromRow)]
 pub struct Program {

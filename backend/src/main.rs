@@ -423,6 +423,76 @@ async fn get_all_non_admins(
     })
 }
 
+#[derive(Deserialize)]
+struct AddingNewCourseStruct {
+    session_token: session_token::SessionToken,
+    new_course: courses::courses::NewCourse,
+    program_id: Vec<i32>,
+}
+
+#[derive(Serialize)]
+struct AddingNewCourseResult {
+    status: String,
+    message: Option<String>,
+}
+
+#[post(
+    "/add_new_course",
+    format = "json",
+    data = "<adding_new_course_struct>"
+)]
+async fn add_new_course(
+    adding_new_course_struct: Json<AddingNewCourseStruct>,
+) -> Json<AddingNewCourseResult> {
+    let mut data = adding_new_course_struct.into_inner();
+
+    let result = data
+        .new_course
+        .add_new_course(data.session_token, data.program_id)
+        .await;
+
+    Json(match &result {
+        courses::courses::AddingNewCourseResult::DatabaseError(error) => AddingNewCourseResult {
+            status: result.to_string(),
+            message: Some(error.clone()),
+        },
+        courses::courses::AddingNewCourseResult::InsertDatabaseError((id, error)) => match id {
+            Some(id) => {
+                let mut connection = match database::establish_connection_to_database().await {
+                    Ok(database_url) => database_url,
+                    Err(error) => {
+                        return Json(AddingNewCourseResult {
+                            status: String::from("DatabaseError"),
+                            message: Some(format!("{}", error)),
+                        })
+                    }
+                };
+
+                match courses::courses::NewCourse::revert_insert_of_new_course(*id, &mut connection)
+                    .await
+                {
+                    Ok(_) => AddingNewCourseResult {
+                        status: result.to_string(),
+                        message: Some(error.clone()),
+                    },
+                    Err(error_2) => AddingNewCourseResult {
+                        status: String::from("DatabaseError"),
+                        message: Some(error_2),
+                    },
+                }
+            }
+            None => AddingNewCourseResult {
+                status: String::from("DatabaseError"),
+                message: Some(String::from("Completly unexpected null")),
+            },
+        },
+        other => AddingNewCourseResult {
+            status: other.to_string(),
+            message: None,
+        },
+    })
+}
+
 #[launch]
 fn rocket() -> _ {
     rocket::build()
@@ -442,5 +512,8 @@ fn rocket() -> _ {
             "/courses",
             routes![get_all_addable_courses, modify_existing_course_data],
         )
-        .mount("/admin", routes![add_new_admin, get_all_non_admins])
+        .mount(
+            "/admin",
+            routes![add_new_admin, get_all_non_admins, add_new_course],
+        )
 }
