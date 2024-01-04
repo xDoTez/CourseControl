@@ -11,7 +11,7 @@ use itertools::iproduct;
 use rocket::serde::{Deserialize, Serialize};
 use sqlx::{prelude::FromRow, PgConnection};
 
-#[derive(Serialize, FromRow)]
+#[derive(Serialize, Deserialize, FromRow)]
 pub struct Program {
     id: Option<i32>,
     name: String,
@@ -60,7 +60,8 @@ pub enum GettingProgramsResult {
     DatabaseError(String),
 }
 
-impl Program {
+impl Program // impl block for getting all programs
+{
     pub async fn get_all_programs() -> GettingProgramsResult {
         let mut connection = match database::establish_connection_to_database().await {
             Ok(database_url) => database_url,
@@ -701,5 +702,43 @@ impl CourseData {
         }
 
         CourseDataModificationResult::Success
+    }
+}
+
+pub enum AddingNewProgramResult {
+    Success,
+    DatabaseError(String),
+    RequestmadeByNonAdminUser,
+}
+impl Program // impl block adding new programs
+{
+    pub async fn add_new_program(
+        &self,
+        session_token: session_token::SessionToken,
+    ) -> AddingNewProgramResult {
+        let mut connection = match database::establish_connection_to_database().await {
+            Ok(con) => con,
+            Err(error) => return AddingNewProgramResult::DatabaseError(format!("{}", error)),
+        };
+
+        match users::admin::Admin::check_if_session_token_belongs_to_admin(
+            session_token,
+            &mut connection,
+        )
+        .await
+        {
+            Ok(true) => {}
+            Ok(false) => return AddingNewProgramResult::RequestmadeByNonAdminUser,
+            Err(error) => return AddingNewProgramResult::DatabaseError(format!("{}", error)),
+        };
+
+        match sqlx::query("INSERT INTO programs(name) VALUES ($1)")
+            .bind(&self.name)
+            .execute(&mut connection)
+            .await
+        {
+            Ok(_) => AddingNewProgramResult::Success,
+            Err(error) => AddingNewProgramResult::DatabaseError(format!("{}", error)),
+        }
     }
 }
