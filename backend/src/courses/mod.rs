@@ -11,7 +11,7 @@ use itertools::iproduct;
 use rocket::serde::{Deserialize, Serialize};
 use sqlx::{prelude::FromRow, PgConnection};
 
-#[derive(Serialize, FromRow)]
+#[derive(Serialize, Deserialize, FromRow)]
 pub struct Program {
     id: Option<i32>,
     name: String,
@@ -708,17 +708,32 @@ impl CourseData {
 pub enum AddingNewProgramResult {
     Success,
     DatabaseError(String),
+    RequestmadeByNonAdminUser,
 }
 impl Program // impl block adding new programs
 {
-    pub async fn add_new_program(name: &str) -> AddingNewProgramResult {
+    pub async fn add_new_program(
+        &self,
+        session_token: session_token::SessionToken,
+    ) -> AddingNewProgramResult {
         let mut connection = match database::establish_connection_to_database().await {
             Ok(con) => con,
             Err(error) => return AddingNewProgramResult::DatabaseError(format!("{}", error)),
         };
 
+        match users::admin::Admin::check_if_session_token_belongs_to_admin(
+            session_token,
+            &mut connection,
+        )
+        .await
+        {
+            Ok(true) => {}
+            Ok(false) => return AddingNewProgramResult::RequestmadeByNonAdminUser,
+            Err(error) => return AddingNewProgramResult::DatabaseError(format!("{}", error)),
+        };
+
         match sqlx::query("INSERT INTO programs(name) VALUES ($1)")
-            .bind(name)
+            .bind(&self.name)
             .execute(&mut connection)
             .await
         {

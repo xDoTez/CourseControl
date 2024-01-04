@@ -493,6 +493,40 @@ async fn add_new_course(
     })
 }
 
+#[derive(Deserialize)]
+struct AddingNewProgramStruct {
+    program: courses::Program,
+    session_token: session_token::SessionToken,
+}
+
+#[derive(Serialize)]
+struct AddingNewProgramResult {
+    status: String,
+    message: Option<String>,
+}
+
+#[post("/add_new_program", format = "json", data = "<data>")]
+async fn add_new_program(data: Json<AddingNewProgramStruct>) -> Json<AddingNewProgramResult> {
+    let data = data.into_inner();
+
+    let result = data.program.add_new_program(data.session_token).await;
+
+    Json(match result {
+        courses::AddingNewProgramResult::DatabaseError(error) => AddingNewProgramResult {
+            status: String::from("DatabaseError"),
+            message: Some(error.clone()),
+        },
+        courses::AddingNewProgramResult::Success => AddingNewProgramResult {
+            status: String::from("Success"),
+            message: None,
+        },
+        courses::AddingNewProgramResult::RequestmadeByNonAdminUser => AddingNewProgramResult {
+            status: String::from("RequestmadeByNonAdminUser"),
+            message: None,
+        },
+    })
+}
+
 #[launch]
 fn rocket() -> _ {
     rocket::build()
@@ -514,6 +548,11 @@ fn rocket() -> _ {
         )
         .mount(
             "/admin",
-            routes![add_new_admin, get_all_non_admins, add_new_course],
+            routes![
+                add_new_admin,
+                get_all_non_admins,
+                add_new_course,
+                add_new_program
+            ],
         )
 }
