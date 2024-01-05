@@ -13,30 +13,29 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.coursecontrol.model.CourseData
 import com.example.coursecontrol.util.SessionManager
-import com.example.coursecontrol.viewmodel.CourseViewModel
+import com.example.coursecontrol.viewmodel.CourseViewModelHistory  // Updated import
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.coroutines.launch
 
-class CourseDisplayActivity : AppCompatActivity() {
-    private val viewModel: CourseViewModel by viewModels()
+class CourseDisplayHistoryActivity : AppCompatActivity() {
+    private val viewModel: CourseViewModelHistory by viewModels()
     private lateinit var sessionManager: SessionManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.course_display_activity)
+        setContentView(R.layout.course_display_history_activity)
         Log.d("tu", "tu")
 
         sessionManager = SessionManager(this)
 
         val recyclerView: RecyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
+        val activeButton: Button = findViewById(R.id.activeButton)
 
-        val historyButton: Button = findViewById(R.id.historyButton)
-        historyButton.setOnClickListener {
-            val historyIntent = Intent(this, CourseDisplayHistoryActivity::class.java)
+        activeButton.setOnClickListener {
+            val historyIntent = Intent(this, CourseDisplayActivity::class.java)
             startActivity(historyIntent)
         }
-
         viewModel.courseDataLiveData.observe(this, Observer { courseDataList ->
             val userDataAdapter = UserDataAdapter(courseDataList) { selectedCourseData ->
                 onCourseItemSelected(selectedCourseData)
@@ -69,6 +68,7 @@ class CourseDisplayActivity : AppCompatActivity() {
                 if (sessionToken != null) {
                     viewModel.makeApiCall(sessionToken)
                 } else {
+                    // Handle the case when sessionToken is null
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
