@@ -6,7 +6,7 @@
 
     <LinearLayout
         android:id="@+id/linearLayout"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -19,25 +19,37 @@
             app:layout_constraintStart_toStartOf="parent"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="#BD1111"
+            android:textColor="@color/white"
             android:text="Asc" />
 
         <Button
             android:id="@+id/alphabeticDesc"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="#BD1111"
+            android:textColor="@color/white"
             android:text="Desc" />
 
         <Button
             android:id="@+id/semesterAsc"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="SemesterAsc" />
+            android:layout_weight="1"
+            android:background="#BD1111"
+            android:textColor="@color/white"
+            android:text="Sem Asc" />
 
         <Button
             android:id="@+id/semesterDesc"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="SemesterDesc" />
+            android:layout_weight="1"
+            android:background="#BD1111"
+            android:textColor="@color/white"
+            android:text="Sem Desc" />
 
     </LinearLayout>
 
