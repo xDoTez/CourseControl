@@ -89,6 +89,13 @@
             android:layout_weight="1"
             android:text="History" />
 
+        <Button
+            android:id="@+id/btnUsers"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Users" />
+
     </LinearLayout>
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
