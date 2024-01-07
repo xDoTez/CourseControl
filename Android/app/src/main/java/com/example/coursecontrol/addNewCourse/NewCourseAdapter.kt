@@ -1,4 +1,4 @@
-// UserDataAdapter.kt
+package com.example.coursecontrol.addNewCourse
 
 import android.view.LayoutInflater
 import android.view.View
@@ -7,12 +7,11 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.coursecontrol.R
 import com.example.coursecontrol.model.Course
-import com.example.coursecontrol.model.CourseData
 
-class UserDataAdapter(
-    private val courseDataList: List<CourseData>,
-    private val onItemClick: (CourseData) -> Unit
-) : RecyclerView.Adapter<UserDataAdapter.ViewHolder>() {
+class NewCourseAdapter (
+    private val courseDataList: List<Course>,
+    private val onItemClick: (Course) -> Unit
+) : RecyclerView.Adapter<NewCourseAdapter.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view =
@@ -34,10 +33,10 @@ class UserDataAdapter(
         private val textSemester: TextView = itemView.findViewById(R.id.textSemester)
         private val textEctsPoints: TextView = itemView.findViewById(R.id.textEctsPoints)
 
-        fun bind(courseData: CourseData) {
-            textCourseName.text = courseData.course.name
-            textSemester.text = "Semester: ${courseData.course.semester}"
-            textEctsPoints.text = "ECTS Points: ${courseData.course.ects}"
+        fun bind(courseData: Course) {
+            textCourseName.text = courseData.name
+            textSemester.text = "Semester: ${courseData.semester}"
+            textEctsPoints.text = "ECTS Points: ${courseData.ects}"
 
             textCourseName.setOnClickListener {
                 onItemClick(courseData)

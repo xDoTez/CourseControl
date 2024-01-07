@@ -11,6 +11,7 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.coursecontrol.addNewCourse.ProgramDisplayActivity
 import com.example.coursecontrol.model.CourseData
 import com.example.coursecontrol.util.SessionManager
 import com.example.coursecontrol.viewmodel.CourseViewModel
@@ -25,6 +26,7 @@ class CourseDisplayActivity : AppCompatActivity() {
     private lateinit var btnAlphDesc: Button
     private lateinit var btnSemAsc: Button
     private lateinit var btnSemDesc: Button
+    private lateinit var btnAddNewCourse: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,6 +42,12 @@ class CourseDisplayActivity : AppCompatActivity() {
         historyButton.setOnClickListener {
             val historyIntent = Intent(this, CourseDisplayHistoryActivity::class.java)
             startActivity(historyIntent)
+        }
+
+        btnAddNewCourse = findViewById(R.id.btnAddNewCourse)
+        btnAddNewCourse.setOnClickListener {
+            val addNewCourseIntent = Intent(this, ProgramDisplayActivity::class.java)
+            startActivity(addNewCourseIntent)
         }
 
         viewModel.courseDataLiveData.observe(this, Observer { courseDataList ->
