@@ -8,6 +8,7 @@ import android.util.Log
 
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 
 import android.widget.Toast
 import com.example.coursecontrol.R.*
@@ -24,6 +25,7 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var etUsername: EditText
     private lateinit var etPassword: EditText
     private lateinit var btnLogin: Button
+    private lateinit var tvRegister: TextView
     private lateinit var sessionManager: SessionManager
     lateinit var apiResponse: LoggedInUser
 
@@ -34,9 +36,16 @@ class LoginActivity : AppCompatActivity() {
         etUsername = findViewById(R.id.etUsername)
         etPassword = findViewById(R.id.etPassword)
         btnLogin = findViewById(R.id.btnLogin)
+        tvRegister = findViewById(R.id.tvRegister)
         sessionManager = SessionManager(this)
+
         btnLogin.setOnClickListener {
             login(etUsername.text.toString(), etPassword.text.toString())
+        }
+
+        tvRegister.setOnClickListener {
+            val registerActivity = Intent(this, RegistrationActivity::class.java)
+            startActivity(registerActivity)
         }
     }
 
