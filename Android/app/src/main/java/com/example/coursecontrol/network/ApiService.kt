@@ -1,8 +1,22 @@
 package com.example.coursecontrol.network
 
+import com.example.coursecontrol.model.AddNewCourse
 import com.example.coursecontrol.model.ApiResponse
+import com.example.coursecontrol.model.ApiResponseAddNewCourse
+import com.example.coursecontrol.model.NewCourses
 import retrofit2.http.Body
+import retrofit2.http.GET
 import retrofit2.http.POST
+
+data class NewCoursesModel(
+    val session_token: YourRequestModel,
+    val program_id: Int
+)
+
+data class AddNewCourseModel(
+    val session_token: YourRequestModel,
+    val course_id: Int
+)
 
 data class YourRequestModel(
     val user: Int,
@@ -25,4 +39,13 @@ interface ApiService {
 
     @POST("http://165.232.76.112:8000/something/course_data?sorting_option=SemesterDesc")
     suspend fun sortSemesterDesc(@Body request: YourRequestModel): ApiResponse
+
+    @GET("http://165.232.76.112:8000/programs/get_all_programs")
+    suspend fun getAllPrograms(): ApiResponseAddNewCourse
+
+    @POST("http://165.232.76.112:8000/courses/get_all_addable_courses")
+    suspend fun getNewCourses(@Body request: NewCoursesModel): NewCourses
+
+    @POST("http://165.232.76.112:8000/users/add_course_data")
+    suspend fun addNewCourse(@Body request: AddNewCourseModel): AddNewCourse
 }
