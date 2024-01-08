@@ -1,15 +1,11 @@
 package com.example.coursecontrol.viewmodel
 
 import android.util.Log
-import android.widget.Toast
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.example.coursecontrol.SessionToken
 import com.example.coursecontrol.model.ApiResponseAddNewCourse
 import com.example.coursecontrol.model.Program
-import com.example.coursecontrol.network.YourRequestModelHistory
 import com.example.coursecontrol.util.RetrofitInstance
-import com.example.coursecontrol.util.RetrofitInstanceHistory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

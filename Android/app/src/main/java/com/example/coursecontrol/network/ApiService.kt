@@ -28,6 +28,9 @@ interface ApiService {
     @POST("http://165.232.76.112:8000/something/course_data")
     suspend fun postUserData(@Body request: YourRequestModel): ApiResponse
 
+    @POST("http://165.232.76.112:8000/something/course_data_old")
+    suspend fun postUserDataHistory(@Body request: YourRequestModel): ApiResponse
+
     @POST("http://165.232.76.112:8000/something/course_data?sorting_option=NameAlphabeticAsc")
     suspend fun sortNameAlphabeticAsc(@Body request: YourRequestModel): ApiResponse
 
