@@ -527,6 +527,45 @@ async fn add_new_program(data: Json<AddingNewProgramStruct>) -> Json<AddingNewPr
     })
 }
 
+#[derive(Serialize)]
+struct CheckingIfUserIsAdmin {
+    status: String,
+    is_admin: Option<bool>,
+    message: Option<String>,
+}
+
+#[post("/check_if_user_is_admin", format = "json", data = "<session_token>")]
+async fn check_if_user_is_admin(
+    session_token: Json<session_token::SessionToken>,
+) -> Json<CheckingIfUserIsAdmin> {
+    let session_token = session_token.into_inner();
+
+    Json(match database::establish_connection_to_database().await {
+        Ok(mut database_url) => match users::admin::Admin::check_if_session_token_belongs_to_admin(
+            session_token,
+            &mut database_url,
+        )
+        .await
+        {
+            Ok(valid) => CheckingIfUserIsAdmin {
+                status: String::from("Success"),
+                is_admin: Some(valid),
+                message: None,
+            },
+            Err(error) => CheckingIfUserIsAdmin {
+                status: String::from("DatabaseError"),
+                is_admin: None,
+                message: Some(error),
+            },
+        },
+        Err(error) => CheckingIfUserIsAdmin {
+            status: String::from("DatabaseError"),
+            is_admin: None,
+            message: Some(format!("{}", error)),
+        },
+    })
+}
+
 #[launch]
 fn rocket() -> _ {
     rocket::build()
@@ -537,7 +576,8 @@ fn rocket() -> _ {
                 get_user_by_id,
                 register_user,
                 login_user,
-                add_course_to_user
+                add_course_to_user,
+                check_if_user_is_admin
             ],
         )
         .mount("/something", routes![get_course_data, get_course_data_old])
