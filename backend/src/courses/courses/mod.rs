@@ -205,7 +205,7 @@ impl NewCourse {
         };
 
         match users::admin::Admin::check_if_session_token_belongs_to_admin(
-            session_token,
+            &session_token,
             &mut connection,
         )
         .await
@@ -216,6 +216,16 @@ impl NewCourse {
             },
             Err(error) => return AddingNewCourseResult::DatabaseError(error),
         };
+
+        let admin: users::admin::Admin = match sqlx::query_as("SELECT * FROM admins WHERE user_id = $1")
+            .bind(&session_token.user)
+            .fetch_one(&mut connection)
+            .await
+            {
+                Ok(admin) => admin,
+                Err(error) => return AddingNewCourseResult::DatabaseError(format!("{}", error))
+            };
+
 
         let course_id: Option<i32>;
         match self.insert_new_course(&mut connection).await {
@@ -275,6 +285,11 @@ impl NewCourse {
             }
         }
 
+        match NewCourse::associate_course_to_admin(course_id, admin.id, &mut connection).await {
+            Ok(_) => {},
+            Err(error) => return AddingNewCourseResult::InsertDatabaseError((course_id, error))
+        }
+
         AddingNewCourseResult::Success
     }
 
@@ -307,6 +322,22 @@ impl NewCourse {
         {
             Ok(_) => Ok(()),
             Err(error) => Err(format!("{}", error)),
+        }
+    }
+
+    async fn associate_course_to_admin(course_id: Option<i32>, admin_id: i32, connection: &mut PgConnection) -> Result<(), String> {
+        match course_id{
+            Some(course_id) => {
+            match sqlx::query("INSERT INTO admin_course(admin, course) VALUES ($1, $2)")
+            .bind(&admin_id)
+            .bind(&course_id)
+            .execute(connection)
+            .await
+            {
+                Ok(_) => Ok(()),
+                Err(error) => Err(format!("{}", error))
+            }}
+            None => Err(String::from("Course_id is null"))
         }
     }
 }

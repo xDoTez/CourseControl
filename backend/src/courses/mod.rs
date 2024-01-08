@@ -722,7 +722,7 @@ impl Program // impl block adding new programs
         };
 
         match users::admin::Admin::check_if_session_token_belongs_to_admin(
-            session_token,
+            &session_token,
             &mut connection,
         )
         .await

@@ -542,7 +542,7 @@ async fn check_if_user_is_admin(
 
     Json(match database::establish_connection_to_database().await {
         Ok(mut database_url) => match users::admin::Admin::check_if_session_token_belongs_to_admin(
-            session_token,
+            &session_token,
             &mut database_url,
         )
         .await
