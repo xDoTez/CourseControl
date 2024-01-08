@@ -53,7 +53,8 @@ impl Admin // impl block for adding new adminss
             }
         };
 
-        match Admin::check_if_session_token_belongs_to_admin(&session_token, &mut connection).await {
+        match Admin::check_if_session_token_belongs_to_admin(&session_token, &mut connection).await
+        {
             Ok(valid) => match valid {
                 true => {}
                 false => return AddingNewAdminResult::RequestMadeByNotAdmin,
@@ -164,7 +165,8 @@ impl Admin // impl block for returning a list of all non-admin users
             Err(_) => return GettingAllNonAdminsResult::InvalidSessionToken,
         };
 
-        match Admin::check_if_session_token_belongs_to_admin(&session_token, &mut connection).await {
+        match Admin::check_if_session_token_belongs_to_admin(&session_token, &mut connection).await
+        {
             Ok(valid) => match valid {
                 true => {}
                 false => return GettingAllNonAdminsResult::RequestMadeByNonAdmin,
