@@ -346,3 +346,104 @@ impl NewCourse {
         }
     }
 }
+
+pub enum TogglingCourseDataActivityResult {
+    Success,
+    DatabaseError(String),
+    InvalidSessionToken,
+    CourseDataNotAssociatedToUser,
+    StrangeDatabaseError,
+    NoUserCourseIdPassed,
+}
+
+impl ToString for TogglingCourseDataActivityResult {
+    fn to_string(&self) -> String {
+        match &self {
+            TogglingCourseDataActivityResult::Success => String::from("Success"),
+            TogglingCourseDataActivityResult::DatabaseError(_) => String::from("DatabaseError"),
+            TogglingCourseDataActivityResult::InvalidSessionToken => {
+                String::from("InvalidSessionToken")
+            }
+            TogglingCourseDataActivityResult::CourseDataNotAssociatedToUser => {
+                String::from("CourseDataNotAssociatedToUser")
+            }
+            TogglingCourseDataActivityResult::StrangeDatabaseError => {
+                String::from("StrangeDatabaseError")
+            }
+            TogglingCourseDataActivityResult::NoUserCourseIdPassed => {
+                String::from("NoUserCourseIdPassed")
+            }
+        }
+    }
+}
+
+impl UserCourse // impl block for toggling activity
+{
+    pub async fn toggle_activity(
+        &self,
+        session_token: session_token::SessionToken,
+    ) -> TogglingCourseDataActivityResult {
+        let user_course_id = match &self.id {
+            Some(id) => id,
+            None => return TogglingCourseDataActivityResult::NoUserCourseIdPassed,
+        };
+
+        let mut connection = match database::establish_connection_to_database().await {
+            Ok(con) => con,
+            Err(error) => {
+                return TogglingCourseDataActivityResult::DatabaseError(format!("{}", error))
+            }
+        };
+
+        match session_token.validate_token(&mut connection).await {
+            Ok(_) => {}
+            Err(_) => return TogglingCourseDataActivityResult::InvalidSessionToken,
+        };
+
+        match UserCourse::get_course_data_by_id_and_session_token(
+            *user_course_id,
+            &session_token,
+            &mut connection,
+        )
+        .await
+        {
+            Ok(user_courses) => match user_courses.len() {
+                1 => {}
+                0 => return TogglingCourseDataActivityResult::CourseDataNotAssociatedToUser,
+                _other => return TogglingCourseDataActivityResult::StrangeDatabaseError,
+            },
+            Err(error) => return TogglingCourseDataActivityResult::DatabaseError(error),
+        };
+
+        let activity = !&self.is_active;
+        match sqlx::query("UPDATE user_courses SET is_active = $1 WHERE id = $2 AND user_id = $3")
+            .bind(&activity)
+            .bind(&user_course_id)
+            .bind(&session_token.user)
+            .execute(&mut connection)
+            .await
+        {
+            Ok(_) => TogglingCourseDataActivityResult::Success,
+            Err(error) => TogglingCourseDataActivityResult::DatabaseError(format!("{}", error)),
+        }
+    }
+
+    async fn get_course_data_by_id_and_session_token(
+        user_course_id: i32,
+        session_token: &session_token::SessionToken,
+        connection: &mut PgConnection,
+    ) -> Result<Vec<UserCourse>, String> {
+        let user_courses: Vec<UserCourse> =
+            match sqlx::query_as("SELECT * FROM user_courses WHERE id = $1 AND user_id = $2")
+                .bind(&user_course_id)
+                .bind(&session_token.user)
+                .fetch_all(connection)
+                .await
+            {
+                Ok(user_courses) => user_courses,
+                Err(error) => return Err(format!("{}", error)),
+            };
+
+        Ok(user_courses)
+    }
+}

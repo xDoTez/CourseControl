@@ -566,6 +566,47 @@ async fn check_if_user_is_admin(
     })
 }
 
+#[derive(Deserialize)]
+struct TogglingActivityStruct {
+    session_token: session_token::SessionToken,
+    user_course: courses::courses::UserCourse,
+}
+
+#[derive(Serialize)]
+struct TogglingActivityResult {
+    status: String,
+    message: Option<String>,
+}
+
+#[post(
+    "/toggle_user_course_activity",
+    format = "json",
+    data = "<toggling_activity_struct>"
+)]
+async fn toggle_user_course_activity(
+    toggling_activity_struct: Json<TogglingActivityStruct>,
+) -> Json<TogglingActivityResult> {
+    let toggling_activity_struct = toggling_activity_struct.into_inner();
+
+    let result = toggling_activity_struct
+        .user_course
+        .toggle_activity(toggling_activity_struct.session_token)
+        .await;
+
+    Json(match &result {
+        courses::courses::TogglingCourseDataActivityResult::DatabaseError(error) => {
+            TogglingActivityResult {
+                status: result.to_string(),
+                message: Some(error.clone()),
+            }
+        }
+        other => TogglingActivityResult {
+            status: other.to_string(),
+            message: None,
+        },
+    })
+}
+
 #[launch]
 fn rocket() -> _ {
     rocket::build()
@@ -584,7 +625,11 @@ fn rocket() -> _ {
         .mount("/programs", routes![get_all_programs])
         .mount(
             "/courses",
-            routes![get_all_addable_courses, modify_existing_course_data],
+            routes![
+                get_all_addable_courses,
+                modify_existing_course_data,
+                toggle_user_course_activity
+            ],
         )
         .mount(
             "/admin",
