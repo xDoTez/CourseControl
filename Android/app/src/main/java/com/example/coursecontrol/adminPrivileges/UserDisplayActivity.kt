@@ -1,5 +1,6 @@
 package com.example.coursecontrol.adminPrivileges
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -26,6 +27,7 @@ class UserDisplayActivity : AppCompatActivity(){
     private val viewModel : UserViewModel by viewModels()
     private lateinit var sessionManager: SessionManager
 
+    @SuppressLint("SuspiciousIndentation")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_user_display)

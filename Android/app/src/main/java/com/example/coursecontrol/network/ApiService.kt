@@ -5,6 +5,8 @@ import com.example.coursecontrol.model.ApiResponse
 import com.example.coursecontrol.model.ApiResponseAddNewCourse
 import com.example.coursecontrol.model.ApiResponseAdminPrivileges
 import com.example.coursecontrol.model.NewCourses
+import com.google.gson.Gson
+import com.google.gson.annotations.SerializedName
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -28,6 +30,7 @@ data class YourRequestModel(
     val session_token: String,
     val expiration: String
 )
+
 
 interface ApiService {
     @POST("http://165.232.76.112:8000/something/course_data")
@@ -56,4 +59,5 @@ interface ApiService {
 
     @POST("http://165.232.76.112:8000/admin/get_all_non_admins")
     suspend fun getAllNonAdmins(@Body request: YourRequestModel): ApiResponseAdminPrivileges
+
 }
