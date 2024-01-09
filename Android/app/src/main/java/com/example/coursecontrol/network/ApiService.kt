@@ -1,6 +1,7 @@
 package com.example.coursecontrol.network
 
 import com.example.coursecontrol.model.AddNewCourse
+import com.example.coursecontrol.model.Admin
 import com.example.coursecontrol.model.ApiResponse
 import com.example.coursecontrol.model.ApiResponseAddNewCourse
 import com.example.coursecontrol.model.NewCourses
@@ -51,4 +52,7 @@ interface ApiService {
 
     @POST("http://165.232.76.112:8000/users/add_course_data")
     suspend fun addNewCourse(@Body request: AddNewCourseModel): AddNewCourse
+
+    @POST("http://165.232.76.112:8000/users/check_if_user_is_admin")
+    suspend fun checkIfAdmin(@Body request: YourRequestModel): Admin
 }
