@@ -454,5 +454,25 @@ pub struct ModifiedCourse {
     semester: i32,
     ects: i32,
     modified_categories: Vec<categories::ModifiedCategory>,
-    new_categories: Vec<categories::NewCategory>
+    new_categories: Vec<categories::NewCategory>,
+    deleted_category_ids: Vec<i32>
+}
+
+pub enum ModifyingCourseResult {
+    Success,
+    DatabaseError(String),
+    InvalidSessionToken,
+    RequestMadeByNonAdmin
+}
+
+impl ModifiedCourse {
+    pub async fn modify_course(&self, session_token: session_token::SessionToken) -> ModifyingCourseResult {
+        let mut connection = match database::establish_connection_to_database().await {
+            Ok(database_url) => database_url,
+            Err(error) => return ModifyingCourseResult::DatabaseError(error),
+        };
+
+        match sess
+        todo!()
+    }
 }

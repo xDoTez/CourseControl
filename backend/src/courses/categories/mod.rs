@@ -162,5 +162,6 @@ pub struct ModifiedCategory {
     points: i32,
     requirements: i32,
     modified_subcategories: Vec<subcategories::ModifiedSubcategory>,
-    new_subcategories: Vec<subcategories::NewSubcategory>
+    new_subcategories: Vec<subcategories::NewSubcategory>,
+    deleted_subcategory_ids: Vec<i32>
 }
