@@ -155,3 +155,12 @@ impl NewCategory // impl block for adding new courses
         }
     }
 }
+
+pub struct ModifiedCategory {
+    id: i32,
+    name: String,
+    points: i32,
+    requirements: i32,
+    modified_subcategories: Vec<subcategories::ModifiedSubcategory>,
+    new_subcategories: Vec<subcategories::NewSubcategory>
+}

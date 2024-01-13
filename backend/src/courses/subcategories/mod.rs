@@ -137,3 +137,10 @@ impl NewSubcategory // impl block for adding new courses
         }
     }
 }
+
+pub struct ModifiedSubcategory {
+    id: i32,
+    name: String, 
+    points: i32,
+    requirements: i32
+}

@@ -447,3 +447,12 @@ impl UserCourse // impl block for toggling activity
         Ok(user_courses)
     }
 }
+
+pub struct ModifiedCourse {
+    id: i32,
+    name: String,
+    semester: i32,
+    ects: i32,
+    modified_categories: Vec<categories::ModifiedCategory>,
+    new_categories: Vec<categories::NewCategory>
+}
