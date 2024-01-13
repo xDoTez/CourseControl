@@ -95,8 +95,8 @@ class LoginActivity : AppCompatActivity() {
 
     private fun handleSuccessfulLogin() {
         Toast.makeText(this@LoginActivity, "Login successful!", Toast.LENGTH_SHORT).show()
-        val beginningActivity = Intent(this, BeginningActivity::class.java)
-        startActivity(beginningActivity)
+        val courseDisplayActivity = Intent(this, CourseDisplayActivity::class.java)
+        startActivity(courseDisplayActivity)
 
         lifecycleScope.launch {
             try {
