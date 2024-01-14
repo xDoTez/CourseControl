@@ -14,7 +14,6 @@ import com.example.coursecontrol.GenerateReportManagerActivity
 import com.example.coursecontrol.Logout
 import com.example.coursecontrol.MainActivity
 import com.example.coursecontrol.R
-
 import com.example.coursecontrol.model.User
 import com.example.coursecontrol.util.SessionManager
 import com.example.coursecontrol.viewmodel.UserViewModel
@@ -76,6 +75,15 @@ class UserDisplayActivity : AppCompatActivity(){
             }
         }
     }
-    private fun onUserItemSelected(user: User) {
+    private fun onUserItemSelected(userData: User) {
+        val sessionToken = sessionManager.getSessionToken()
+        if (sessionToken != null) {
+            val newAdminAlertDialog = NewAdminAlertDialog(
+                this,
+                userData,
+                sessionToken
+            )
+            newAdminAlertDialog.show()
+        }
     }
 }
