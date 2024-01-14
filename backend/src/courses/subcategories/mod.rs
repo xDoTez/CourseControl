@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, PgConnection};
+use sqlx::{FromRow, PgConnection, Postgres, Transaction};
 
 #[derive(Serialize, Deserialize, FromRow, Clone)]
 pub struct Subcategory {
@@ -136,11 +136,32 @@ impl NewSubcategory // impl block for adding new courses
             }
         }
     }
+
+    pub async fn transaction_insert_new_subcategory(
+        &self,
+        connection: &mut Transaction<'_, Postgres>,
+    ) -> Result<(), String> {
+        match &self.category_id {
+            None => Err(String::from("Missing category id")),
+            Some(id) => {
+                match sqlx::query("INSERT INTO subcategories(category_id, name, points, requirements) VALUES ($1, $2, $3, $4)")
+                    .bind(&id)
+                    .bind(&self.name)
+                    .bind(&self.points)
+                    .bind(&self.requirements)
+                    .execute(&mut **connection)
+                    .await {
+                        Ok(_) => Ok(()),
+                        Err(error) => Err(format!("{}", error))
+                    }
+            }
+        }
+    }
 }
 
 pub struct ModifiedSubcategory {
     id: i32,
-    name: String, 
+    name: String,
     points: i32,
-    requirements: i32
+    requirements: i32,
 }

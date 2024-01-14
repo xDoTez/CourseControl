@@ -3,7 +3,7 @@ use std::fmt::Display;
 use super::{categories, session_token, users, CourseDataSortingOptions};
 use crate::{courses::subcategories, database};
 use rocket::serde::{Deserialize, Serialize};
-use sqlx::{FromRow, PgConnection, Row};
+use sqlx::{Connection, FromRow, PgConnection, Postgres, Row, Transaction};
 
 #[derive(Serialize, Deserialize, FromRow, Clone)]
 pub struct Course {
@@ -455,24 +455,97 @@ pub struct ModifiedCourse {
     ects: i32,
     modified_categories: Vec<categories::ModifiedCategory>,
     new_categories: Vec<categories::NewCategory>,
-    deleted_category_ids: Vec<i32>
+    deleted_category_ids: Vec<i32>,
 }
 
 pub enum ModifyingCourseResult {
     Success,
     DatabaseError(String),
     InvalidSessionToken,
-    RequestMadeByNonAdmin
+    RequestMadeByNonAdmin,
+    TransactionInitializationError,
+    TransactionCommitingError,
+    NewCategoryInsertionError(String),
 }
 
 impl ModifiedCourse {
-    pub async fn modify_course(&self, session_token: session_token::SessionToken) -> ModifyingCourseResult {
+    pub async fn modify_course(
+        &mut self,
+        session_token: session_token::SessionToken,
+    ) -> ModifyingCourseResult {
         let mut connection = match database::establish_connection_to_database().await {
             Ok(database_url) => database_url,
             Err(error) => return ModifyingCourseResult::DatabaseError(error),
         };
 
-        match sess
-        todo!()
+        match session_token.validate_token(&mut connection).await {
+            Ok(_) => {}
+            Err(_) => return ModifyingCourseResult::InvalidSessionToken,
+        };
+
+        match users::admin::Admin::check_if_session_token_belongs_to_admin(
+            &session_token,
+            &mut connection,
+        )
+        .await
+        {
+            Ok(true) => {}
+            Ok(false) => return ModifyingCourseResult::RequestMadeByNonAdmin,
+            Err(error) => return ModifyingCourseResult::DatabaseError(error),
+        };
+
+        let mut transaction = match connection.begin().await {
+            Ok(transaction) => transaction,
+            Err(_) => return ModifyingCourseResult::TransactionInitializationError,
+        };
+
+        match ModifiedCourse::transaction_insert_new_categories(
+            &mut self.new_categories,
+            self.id,
+            &mut transaction,
+        )
+        .await
+        {
+            Ok(_) => {}
+            Err(error) => return ModifyingCourseResult::NewCategoryInsertionError(error),
+        };
+
+        // Delete categories by id here
+
+        // Modify the modified categories - probably a function on ModifiedCategories
+
+        match transaction.commit().await {
+            Ok(_) => ModifyingCourseResult::Success,
+            Err(_) => ModifyingCourseResult::TransactionCommitingError,
+        }
+    }
+
+    async fn transaction_insert_new_categories(
+        categories: &mut Vec<categories::NewCategory>,
+        course_id: i32,
+        transaction: &mut Transaction<'_, Postgres>,
+    ) -> Result<(), String> {
+        for category in categories {
+            category.course_id = Some(course_id);
+            match category.transaction_insert_new_category(transaction).await {
+                Ok(id) => match &mut category.subcategories {
+                    Some(subcategories) => {
+                        for subcategory in subcategories {
+                            subcategory.category_id = Some(id);
+                            match subcategory
+                                .transaction_insert_new_subcategory(transaction)
+                                .await
+                            {
+                                Ok(_) => {}
+                                Err(error) => return Err(format!("{}", error)),
+                            }
+                        }
+                    }
+                    None => {}
+                },
+                Err(error) => return Err(error),
+            }
+        }
+        Ok(())
     }
 }

@@ -1,6 +1,6 @@
 use super::subcategories;
 use rocket::serde::{Deserialize, Serialize};
-use sqlx::{FromRow, PgConnection, Row};
+use sqlx::{FromRow, PgConnection, Postgres, Row, Transaction};
 
 #[derive(Serialize, Deserialize, FromRow, Clone)]
 pub struct Category {
@@ -154,6 +154,30 @@ impl NewCategory // impl block for adding new courses
             }
         }
     }
+
+    pub async fn transaction_insert_new_category(
+        &mut self,
+        transaction: &mut Transaction<'_, Postgres>,
+    ) -> Result<i32, String> {
+        match &self.course_id {
+            None => Err(String::from("Missing course Id")),
+            Some(id) => {
+                match sqlx::query("INSERT INTO categories(course_id, name, points, requirements) VALUES ($1, $2, $3, $4) RETURNING id")
+                    .bind(&id)
+                    .bind(&self.name)
+                    .bind(&self.points)
+                    .bind(&self.requirements)
+                    .fetch_one(&mut **transaction)
+                    .await {
+                        Ok(row) => match row.try_get("id") {
+                            Ok(id) => Ok(id),
+                            Err(error) => Err(format!("{}", error))
+                        },
+                        Err(error) => Err(format!("{}", error))
+                    }
+            }
+        }
+    }
 }
 
 pub struct ModifiedCategory {
@@ -163,5 +187,5 @@ pub struct ModifiedCategory {
     requirements: i32,
     modified_subcategories: Vec<subcategories::ModifiedSubcategory>,
     new_subcategories: Vec<subcategories::NewSubcategory>,
-    deleted_subcategory_ids: Vec<i32>
+    deleted_subcategory_ids: Vec<i32>,
 }
