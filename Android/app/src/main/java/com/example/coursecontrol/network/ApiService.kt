@@ -63,4 +63,7 @@ interface ApiService {
 
     @POST("http://165.232.76.112:8000/users/check_if_user_is_admin")
     suspend fun checkIfAdmin(@Body request: YourRequestModel): Admin
+
+    @POST("http://165.232.76.112:8000/admin/get_all_non_admins")
+    suspend fun getAllNonAdmins(@Body request: YourRequestModel): ApiResponseAdminPrivileges
 }
