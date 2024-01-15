@@ -1,10 +1,14 @@
 package com.example.coursecontrol.network
 
 import com.example.coursecontrol.model.AddNewCourse
+import com.example.coursecontrol.model.Admin
 import com.example.coursecontrol.model.ApiResponse
 import com.example.coursecontrol.model.ApiResponseAddNewCourse
+import com.example.coursecontrol.model.ApiResponseAdminPrivileges
 import com.example.coursecontrol.model.NewCourses
 import com.example.coursecontrol.model.ProgramNew
+import com.google.gson.Gson
+import com.google.gson.annotations.SerializedName
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -12,6 +16,10 @@ import retrofit2.http.POST
 data class NewCoursesModel(
     val session_token: YourRequestModel,
     val program_id: Int
+)
+data class UserModel(
+    val session_token: YourRequestModel,
+    val user_id: Int
 )
 
 data class AddNewCourseModel(
@@ -24,6 +32,7 @@ data class YourRequestModel(
     val session_token: String,
     val expiration: String
 )
+
 
 interface ApiService {
     @POST("http://165.232.76.112:8000/something/course_data")
@@ -55,4 +64,10 @@ interface ApiService {
 
     @POST("http://165.232.76.112:8000/users/add_course_data")
     suspend fun addNewCourse(@Body request: AddNewCourseModel): AddNewCourse
+
+    @POST("http://165.232.76.112:8000/users/check_if_user_is_admin")
+    suspend fun checkIfAdmin(@Body request: YourRequestModel): Admin
+
+    @POST("http://165.232.76.112:8000/admin/get_all_non_admins")
+    suspend fun getAllNonAdmins(@Body request: YourRequestModel): ApiResponseAdminPrivileges
 }

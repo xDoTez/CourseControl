@@ -11,9 +11,16 @@ import android.widget.EditText
 import android.widget.TextView
 
 import android.widget.Toast
+import androidx.lifecycle.lifecycleScope
 import com.example.coursecontrol.R.*
+import com.example.coursecontrol.model.Admin
+import com.example.coursecontrol.network.NewCoursesModel
+import com.example.coursecontrol.network.YourRequestModel
 import com.example.coursecontrol.util.SessionManager
 import com.google.gson.Gson
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Callback
@@ -28,6 +35,8 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var tvRegister: TextView
     private lateinit var sessionManager: SessionManager
     lateinit var apiResponse: LoggedInUser
+
+    var admin: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -86,7 +95,58 @@ class LoginActivity : AppCompatActivity() {
 
     private fun handleSuccessfulLogin() {
         Toast.makeText(this@LoginActivity, "Login successful!", Toast.LENGTH_SHORT).show()
-        val beginningActivity = Intent(this, BeginningActivity::class.java)
-        startActivity(beginningActivity);
+        val courseDisplayActivity = Intent(this, CourseDisplayActivity::class.java)
+        startActivity(courseDisplayActivity)
+
+        lifecycleScope.launch {
+            try {
+                val sessionToken = sessionManager.getSessionToken()
+                if (sessionToken != null) {
+                    makeApiCall(sessionToken)
+                } else {
+                    // Handle the case when sessionToken is null
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+
+    suspend fun makeApiCall(sessionToken: SessionToken) {
+        if (sessionToken.session_token != null && sessionToken.expiration != null) {
+            val requestModel = YourRequestModel(
+                    user = sessionToken.user,
+                    session_token = sessionToken.session_token,
+                    expiration = sessionToken.expiration
+            )
+
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    com.example.coursecontrol.util.RetrofitInstance.apiService.checkIfAdmin(requestModel)
+                }
+
+                handleApiResponse(response)
+
+            } catch (e: Exception) {
+                handleApiError(e)
+            }
+        } else {
+            Log.e("CheckIfAdmin", "Invalid SessionToken: $sessionToken")
+        }
+    }
+
+    private fun handleApiError(e: Exception) {
+        Log.e("CheckIfAdmin", "API call failed", e)
+    }
+
+    private fun handleApiResponse(response: Admin) {
+        if (response.status == "Success") {
+            admin = response.is_admin
+            Log.d("IsAdmin", "${admin}")
+
+        } else {
+            Log.e("CheckIfAdmin", "API call unsuccessful. Status: ${response.status}")
+        }
     }
 }
