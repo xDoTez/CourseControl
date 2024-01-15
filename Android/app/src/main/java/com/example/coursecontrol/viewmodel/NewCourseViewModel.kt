@@ -5,10 +5,9 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.coursecontrol.SessionToken
-import com.example.coursecontrol.model.ApiResponse
 import com.example.coursecontrol.model.Course
-import com.example.coursecontrol.model.CourseData
 import com.example.coursecontrol.model.NewCourses
+import com.example.coursecontrol.model.ProgramNew
 import com.example.coursecontrol.network.NewCoursesModel
 import com.example.coursecontrol.network.YourRequestModel
 import com.example.coursecontrol.util.RetrofitInstance
