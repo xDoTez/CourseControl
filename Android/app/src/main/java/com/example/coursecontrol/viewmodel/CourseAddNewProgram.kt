@@ -6,6 +6,8 @@ import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import com.example.coursecontrol.SessionToken
 import com.example.coursecontrol.model.ApiResponse
+import com.example.coursecontrol.model.Program
+import com.example.coursecontrol.model.ProgramName
 import com.example.coursecontrol.model.ProgramNew
 import com.example.coursecontrol.network.YourRequestModel
 import com.example.coursecontrol.util.RetrofitInstance
@@ -14,7 +16,7 @@ import kotlinx.coroutines.withContext
 
 class CourseAddNewProgram : ViewModel() {
 
-    suspend fun addNewProgram(context: Context, sessionToken: SessionToken, programName: String) {
+    suspend fun addNewProgram(context: Context, sessionToken: SessionToken, program: String) {
         if (sessionToken.isValid()) {
             val requestModel = ProgramNew(
                 session_token = YourRequestModel(
@@ -22,10 +24,14 @@ class CourseAddNewProgram : ViewModel() {
                     session_token = sessionToken.session_token,
                     expiration = sessionToken.expiration
                 ),
-                name = programName
+                program = ProgramName(
+                    name = program
+                )
             )
 
             try {
+                Log.i("CourseAddNewProgram", "Sending request to add a new program. Request: $requestModel")
+
                 val response = withContext(Dispatchers.IO) {
                     RetrofitInstance.apiService.addNewProgram(requestModel)
                 }
