@@ -2,8 +2,9 @@ package com.example.coursecontrol.adminPrivileges
 
 import android.app.Activity
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.example.coursecontrol.SessionToken
@@ -19,55 +20,41 @@ import kotlinx.coroutines.withContext
 
 class NewAdminAlertDialog(context: Context, user: User, sessionToken: SessionToken) {
     private val alertDialog: AlertDialog = AlertDialog.Builder(context).create()
-
-    private fun showSuccessPopup() {
-        val context = alertDialog.context
-
-        if (context is AppCompatActivity) {
-            context.runOnUiThread {
-                Toast.makeText(context, "User successfully granted administrative privileges.", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
+    private val appContext: Context = context
     init {
         alertDialog.setTitle("Confirm selection")
         alertDialog.setMessage("Are you sure you want to grant administrative privileges to user " + user.username)
 
         alertDialog.setButton(
             AlertDialog.BUTTON_POSITIVE, "YES"
-        ) {_, _ ->
+        ) { _, _ ->
 
             val coroutineScope = CoroutineScope(Dispatchers.Default)
             coroutineScope.launch {
                 makeApiCall(sessionToken, user.id)
             }
-
             alertDialog.dismiss()
         }
-
         alertDialog.setButton(
             AlertDialog.BUTTON_NEGATIVE, "NO"
-        ) {_, _ ->
+        ) { _, _ ->
             alertDialog.dismiss()
         }
     }
-
     fun show() {
         alertDialog.show()
     }
-
     suspend fun makeApiCall(sessionToken: SessionToken, userID: Int) {
         if (sessionToken.session_token != null && sessionToken.expiration != null) {
             val requestModel = NewAdminModel(
                 session_token = YourRequestModel(
                     user = sessionToken.user,
                     session_token = sessionToken.session_token,
-                    expiration = sessionToken.expiration),
+                    expiration = sessionToken.expiration
+                ),
                 user_id = userID
             )
-
             Log.d("AddNewAdminViewModel", "Request Body: $requestModel")
-
             try {
                 val response = withContext(Dispatchers.IO) {
                     RetrofitInstance.apiService.addNewAdmin(requestModel)
@@ -82,7 +69,6 @@ class NewAdminAlertDialog(context: Context, user: User, sessionToken: SessionTok
             Log.e("AddNewAdminViewModel", "Invalid SessionToken: $sessionToken")
         }
     }
-
     private fun handleApiResponse(response: AddNewAdmin) {
         if (response.status == "Success") {
             val newData = response.message
@@ -94,8 +80,27 @@ class NewAdminAlertDialog(context: Context, user: User, sessionToken: SessionTok
         }
     }
 
+    private fun showSuccessPopup() {
+        Log.d("NewAdminAlertDialog", "Showing success pop-up")
+
+        if (appContext is Activity) {
+            val handler = Handler(Looper.getMainLooper())
+            handler.postDelayed({
+                appContext.runOnUiThread {
+                    Log.d("NewAdminAlertDialog", "Inside runOnUiThread")
+                    val successDialog = AlertDialog.Builder(appContext)
+                        .setTitle("Success")
+                        .setMessage("User successfully granted administrative privileges.")
+                        .setPositiveButton("OK") { _, _ ->
+                            Log.d("NewAdminAlertDialog", "OK button clicked")
+                        }
+                        .create()
+                    successDialog.show()
+                }
+            }, 500)
+        }
+    }
     private fun handleApiError(exception: Exception) {
         Log.e("AdminViewModel", "API call failed", exception)
     }
-
 }
