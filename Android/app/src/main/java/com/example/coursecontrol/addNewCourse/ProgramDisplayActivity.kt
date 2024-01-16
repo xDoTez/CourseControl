@@ -47,7 +47,7 @@ class ProgramDisplayActivity : AppCompatActivity() {
         val addNewProgramButton: Button = findViewById(R.id.btnAddNewProgram)
         val isAdmin = adminChecker.isAdmin()
 
-        if (isAdmin) {
+        if (!isAdmin) {
             addNewProgramButton.visibility = View.GONE
         }
         addNewProgramButton.setOnClickListener {
