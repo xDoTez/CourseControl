@@ -1,8 +1,11 @@
 package com.example.coursecontrol.adminPrivileges
 
+import android.app.Activity
 import android.content.Context
 import android.util.Log
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import com.example.coursecontrol.SessionToken
 import com.example.coursecontrol.model.AddNewAdmin
 import com.example.coursecontrol.network.NewAdminModel
@@ -17,9 +20,18 @@ import kotlinx.coroutines.withContext
 class NewAdminAlertDialog(context: Context, user: User, sessionToken: SessionToken) {
     private val alertDialog: AlertDialog = AlertDialog.Builder(context).create()
 
+    private fun showSuccessPopup() {
+        val context = alertDialog.context
+
+        if (context is AppCompatActivity) {
+            context.runOnUiThread {
+                Toast.makeText(context, "User successfully granted administrative privileges.", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
     init {
         alertDialog.setTitle("Confirm selection")
-        alertDialog.setMessage("Are you sure you want to enroll " + user.username)
+        alertDialog.setMessage("Are you sure you want to grant administrative privileges to user " + user.username)
 
         alertDialog.setButton(
             AlertDialog.BUTTON_POSITIVE, "YES"
@@ -75,6 +87,7 @@ class NewAdminAlertDialog(context: Context, user: User, sessionToken: SessionTok
         if (response.status == "Success") {
             val newData = response.message
             Log.d("AddNewAdmin", "Successfully added new admin!")
+            showSuccessPopup()
 
         } else {
             Log.e("AddNewAdmin", "API call unsuccessful. Status: ${response.status}")
@@ -84,4 +97,5 @@ class NewAdminAlertDialog(context: Context, user: User, sessionToken: SessionTok
     private fun handleApiError(exception: Exception) {
         Log.e("AdminViewModel", "API call failed", exception)
     }
+
 }
