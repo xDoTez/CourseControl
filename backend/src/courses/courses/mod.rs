@@ -1,9 +1,7 @@
-use std::fmt::Display;
 use super::categories;
+use std::fmt::Display;
 
-use super::{
-    session_token, users, CourseDataSortingOptions,
-};
+use super::{session_token, users, CourseDataSortingOptions};
 use crate::{courses::subcategories, database};
 use rocket::serde::{Deserialize, Serialize};
 use sqlx::{Connection, FromRow, PgConnection, Postgres, Row, Transaction};
@@ -451,6 +449,7 @@ impl UserCourse // impl block for toggling activity
     }
 }
 
+#[derive(Deserialize)]
 pub struct ModifiedCourse {
     id: i32,
     name: String,
@@ -470,6 +469,29 @@ pub enum ModifyingCourseResult {
     TransactionCommitingError,
     NewCategoryInsertionError(String),
     ErrorDeletingCategory(i32),
+}
+
+impl ToString for ModifyingCourseResult {
+    fn to_string(&self) -> String {
+        match self {
+            ModifyingCourseResult::Success => String::from("Success"),
+            ModifyingCourseResult::DatabaseError(_) => String::from("DatabaseError"),
+            ModifyingCourseResult::InvalidSessionToken => String::from("InvalidSessionToken"),
+            ModifyingCourseResult::RequestMadeByNonAdmin => String::from("RequestMadeByNonAdmin"),
+            ModifyingCourseResult::TransactionInitializationError => {
+                String::from("TransactionInitializationError")
+            }
+            ModifyingCourseResult::TransactionCommitingError => {
+                String::from("TransactionCommitingError")
+            }
+            ModifyingCourseResult::NewCategoryInsertionError(_) => {
+                String::from("NewCategoryInsertionError")
+            }
+            ModifyingCourseResult::ErrorDeletingCategory(_) => {
+                String::from("ErrorDeletingCategory")
+            }
+        }
+    }
 }
 
 impl ModifiedCourse {
@@ -524,13 +546,17 @@ impl ModifiedCourse {
             Err(error_id) => return ModifyingCourseResult::ErrorDeletingCategory(error_id),
         };
 
-        // Modify the modified categories - probably a function on ModifiedCategories
         match ModifiedCourse::transaction_modify_existing_categories(
             &self.modified_categories,
             &mut transaction,
         )
         .await
         {
+            Ok(_) => {}
+            Err(error) => return ModifyingCourseResult::DatabaseError(error),
+        };
+
+        match self.transaction_modify_course_info(&mut transaction).await {
             Ok(_) => {}
             Err(error) => return ModifyingCourseResult::DatabaseError(error),
         };
@@ -590,5 +616,22 @@ impl ModifiedCourse {
         }
 
         Ok(())
+    }
+
+    async fn transaction_modify_course_info(
+        &self,
+        transaction: &mut Transaction<'_, Postgres>,
+    ) -> Result<(), String> {
+        match sqlx::query("UPDATE courses SET name = $1, semester = $2, ects = $3 WHERE id = $4")
+            .bind(&self.name)
+            .bind(&self.semester)
+            .bind(&self.ects)
+            .bind(&self.id)
+            .execute(&mut **transaction)
+            .await
+        {
+            Ok(_) => Ok(()),
+            Err(error) => Err(format!("{}", error)),
+        }
     }
 }

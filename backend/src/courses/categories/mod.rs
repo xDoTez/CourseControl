@@ -198,6 +198,7 @@ impl NewCategory // impl block for adding new courses
     }
 }
 
+#[derive(Deserialize)]
 pub struct ModifiedCategory {
     id: i32,
     name: String,
@@ -254,9 +255,31 @@ impl ModifiedCategory {
                     }
                 }
 
+                match self
+                    .transaction_delete_subcategories_on_category(transaction)
+                    .await
+                {
+                    Ok(_) => {}
+                    Err(error) => return ModifyingCategoryResult::DatabaseError(error),
+                };
+
                 ModifyingCategoryResult::Success
             }
             false => ModifyingCategoryResult::MissmatchingPoints(self.id),
+        }
+    }
+
+    async fn transaction_delete_subcategories_on_category(
+        &self,
+        transaction: &mut Transaction<'_, Postgres>,
+    ) -> Result<(), String> {
+        match sqlx::query("DELETE FROM subcategories WHERE id = ANY($1)")
+            .bind(&self.deleted_subcategory_ids)
+            .execute(&mut **transaction)
+            .await
+        {
+            Ok(_) => Ok(()),
+            Err(error) => Err(format!("{}", error)),
         }
     }
 }

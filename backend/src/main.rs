@@ -607,6 +607,57 @@ async fn toggle_user_course_activity(
     })
 }
 
+// Create new route for modifying courses
+#[derive(Deserialize)]
+struct ModifyingExistingCourseStruct {
+    modified_course: courses::courses::ModifiedCourse,
+    session_token: session_token::SessionToken,
+}
+
+#[derive(Serialize)]
+struct ModifyingExistingCourseResult {
+    status: String,
+    message: Option<String>,
+}
+
+#[post(
+    "/modify_existing_course",
+    format = "json",
+    data = "<modifying_existing_course_data>"
+)]
+async fn modify_existing_course(
+    modifying_existing_course_data: Json<ModifyingExistingCourseStruct>,
+) -> Json<ModifyingExistingCourseResult> {
+    let mut data = modifying_existing_course_data.into_inner();
+
+    let result = data.modified_course.modify_course(data.session_token).await;
+
+    Json(match &result {
+        courses::courses::ModifyingCourseResult::DatabaseError(error) => {
+            ModifyingExistingCourseResult {
+                status: result.to_string(),
+                message: Some(error.clone()),
+            }
+        }
+        courses::courses::ModifyingCourseResult::NewCategoryInsertionError(error) => {
+            ModifyingExistingCourseResult {
+                status: result.to_string(),
+                message: Some(error.clone()),
+            }
+        }
+        courses::courses::ModifyingCourseResult::ErrorDeletingCategory(id) => {
+            ModifyingExistingCourseResult {
+                status: result.to_string(),
+                message: Some(format!("Unable to delete category with ID: {}", id)),
+            }
+        }
+        other => ModifyingExistingCourseResult {
+            status: other.to_string(),
+            message: None,
+        },
+    })
+}
+
 #[launch]
 fn rocket() -> _ {
     rocket::build()
@@ -637,7 +688,8 @@ fn rocket() -> _ {
                 add_new_admin,
                 get_all_non_admins,
                 add_new_course,
-                add_new_program
+                add_new_program,
+                modify_existing_course
             ],
         )
 }

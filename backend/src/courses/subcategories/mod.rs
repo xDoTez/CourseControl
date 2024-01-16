@@ -159,6 +159,7 @@ impl NewSubcategory // impl block for adding new courses
     }
 }
 
+#[derive(Deserialize)]
 pub struct ModifiedSubcategory {
     pub id: i32,
     pub name: String,
