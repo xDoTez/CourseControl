@@ -1,5 +1,6 @@
 package com.example.coursecontrol.network
 
+import com.example.coursecontrol.model.AddNewAdmin
 import com.example.coursecontrol.model.AddNewCourse
 import com.example.coursecontrol.model.Admin
 import com.example.coursecontrol.model.ApiResponse
@@ -31,6 +32,11 @@ data class YourRequestModel(
     val user: Int,
     val session_token: String,
     val expiration: String
+)
+
+data class NewAdminModel(
+    val session_token: YourRequestModel,
+    val user_id: Int
 )
 
 
@@ -70,4 +76,9 @@ interface ApiService {
 
     @POST("http://165.232.76.112:8000/admin/get_all_non_admins")
     suspend fun getAllNonAdmins(@Body request: YourRequestModel): ApiResponseAdminPrivileges
+
+    @POST("http://165.232.76.112:8000/admin/add_new_admin")
+    suspend fun addNewAdmin(@Body request: NewAdminModel): AddNewAdmin
+
+
 }

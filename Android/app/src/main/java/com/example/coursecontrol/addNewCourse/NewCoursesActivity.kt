@@ -1,6 +1,4 @@
 package com.example.coursecontrol.addNewCourse
-
-import UserDataAdapter
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle

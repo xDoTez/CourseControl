@@ -1,9 +1,11 @@
 package com.example.coursecontrol
 
+import AdminChecker
 import UserDataAdapter
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Button
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -22,7 +24,7 @@ import kotlinx.coroutines.launch
 class CourseDisplayActivity : AppCompatActivity() {
     private val viewModel: CourseViewModel by viewModels()
     private lateinit var sessionManager: SessionManager
-
+    val adminChecker = AdminChecker()
     private lateinit var btnAlphAsc: Button
     private lateinit var btnAlphDesc: Button
     private lateinit var btnSemAsc: Button
@@ -33,8 +35,6 @@ class CourseDisplayActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.course_display_activity)
-        Log.d("tu", "tu")
-
         sessionManager = SessionManager(this)
 
         val recyclerView: RecyclerView = findViewById(R.id.recyclerView)
@@ -46,16 +46,16 @@ class CourseDisplayActivity : AppCompatActivity() {
             startActivity(historyIntent)
         }
 
+        val usersButton: Button = findViewById(R.id.btnUsers)
+        usersButton.setOnClickListener {
+            val usersIntent = Intent(this, UserDisplayActivity::class.java)
+            startActivity(usersIntent)
+        }
+
         btnAddNewCourse = findViewById(R.id.btnAddNewCourse)
         btnAddNewCourse.setOnClickListener {
             val addNewCourseIntent = Intent(this, ProgramDisplayActivity::class.java)
             startActivity(addNewCourseIntent)
-        }
-
-        btnUsers = findViewById(R.id.btnUsers)
-        btnUsers.setOnClickListener {
-            val usersIntent = Intent(this, UserDisplayActivity::class.java)
-            startActivity(usersIntent)
         }
 
         viewModel.courseDataLiveData.observe(this, Observer { courseDataList ->
@@ -87,9 +87,18 @@ class CourseDisplayActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val sessionToken = sessionManager.getSessionToken()
+                adminChecker.checkAdmin(sessionToken)
                 if (sessionToken != null) {
                     viewModel.makeApiCall(sessionToken)
                 } else {
+                }
+                val usersButton: Button = findViewById(R.id.btnUsers)
+                val isAdmin = adminChecker.isAdmin()
+                if (isAdmin) {
+                    usersButton.visibility = View.VISIBLE
+                }
+                else{
+                    usersButton.visibility = View.GONE
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
