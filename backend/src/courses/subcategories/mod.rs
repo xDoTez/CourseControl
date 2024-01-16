@@ -160,8 +160,29 @@ impl NewSubcategory // impl block for adding new courses
 }
 
 pub struct ModifiedSubcategory {
-    id: i32,
-    name: String,
-    points: i32,
-    requirements: i32,
+    pub id: i32,
+    pub name: String,
+    pub points: i32,
+    pub requirements: i32,
+}
+
+impl ModifiedSubcategory {
+    pub async fn transaction_modify_subcategory(
+        &self,
+        transaction: &mut Transaction<'_, Postgres>,
+    ) -> Result<(), String> {
+        match sqlx::query(
+            "UPDATE subcategories SET name = $1, points = $2, requirements = $3 WHERE id = $4",
+        )
+        .bind(&self.name)
+        .bind(&self.points)
+        .bind(&self.requirements)
+        .bind(&self.id)
+        .execute(&mut **transaction)
+        .await
+        {
+            Ok(_) => Ok(()),
+            Err(error) => Err(format!("{}", error)),
+        }
+    }
 }

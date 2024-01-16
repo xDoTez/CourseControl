@@ -1,6 +1,9 @@
 use std::fmt::Display;
+use super::categories;
 
-use super::{categories, session_token, users, CourseDataSortingOptions};
+use super::{
+    session_token, users, CourseDataSortingOptions,
+};
 use crate::{courses::subcategories, database};
 use rocket::serde::{Deserialize, Serialize};
 use sqlx::{Connection, FromRow, PgConnection, Postgres, Row, Transaction};
@@ -466,6 +469,7 @@ pub enum ModifyingCourseResult {
     TransactionInitializationError,
     TransactionCommitingError,
     NewCategoryInsertionError(String),
+    ErrorDeletingCategory(i32),
 }
 
 impl ModifiedCourse {
@@ -510,9 +514,26 @@ impl ModifiedCourse {
             Err(error) => return ModifyingCourseResult::NewCategoryInsertionError(error),
         };
 
-        // Delete categories by id here
+        match categories::NewCategory::transaction_delete_categories_by_ids(
+            &self.deleted_category_ids,
+            &mut transaction,
+        )
+        .await
+        {
+            Ok(_) => {}
+            Err(error_id) => return ModifyingCourseResult::ErrorDeletingCategory(error_id),
+        };
 
         // Modify the modified categories - probably a function on ModifiedCategories
+        match ModifiedCourse::transaction_modify_existing_categories(
+            &self.modified_categories,
+            &mut transaction,
+        )
+        .await
+        {
+            Ok(_) => {}
+            Err(error) => return ModifyingCourseResult::DatabaseError(error),
+        };
 
         match transaction.commit().await {
             Ok(_) => ModifyingCourseResult::Success,
@@ -546,6 +567,28 @@ impl ModifiedCourse {
                 Err(error) => return Err(error),
             }
         }
+        Ok(())
+    }
+
+    async fn transaction_modify_existing_categories(
+        categories: &Vec<categories::ModifiedCategory>,
+        transaction: &mut Transaction<'_, Postgres>,
+    ) -> Result<(), String> {
+        for category in categories {
+            match category.transaction_modifie(transaction).await {
+                categories::ModifyingCategoryResult::Success => {}
+                categories::ModifyingCategoryResult::DatabaseError(error) => {
+                    return Err(format!("{}", error))
+                }
+                categories::ModifyingCategoryResult::MissmatchingPoints(category_id) => {
+                    return Err(format!(
+                        "Points between category with id {} and it's subcategories are not equal",
+                        category_id
+                    ))
+                }
+            }
+        }
+
         Ok(())
     }
 }

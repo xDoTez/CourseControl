@@ -178,6 +178,24 @@ impl NewCategory // impl block for adding new courses
             }
         }
     }
+
+    pub async fn transaction_delete_categories_by_ids(
+        categorie_ids: &Vec<i32>,
+        transaction: &mut Transaction<'_, Postgres>,
+    ) -> Result<(), i32> {
+        for category_id in categorie_ids {
+            match sqlx::query("DELETE FROM categories WHERE id = $1")
+                .bind(&category_id)
+                .execute(&mut **transaction)
+                .await
+            {
+                Ok(_) => {}
+                Err(_) => return Err(*category_id),
+            };
+        }
+
+        Ok(())
+    }
 }
 
 pub struct ModifiedCategory {
@@ -187,5 +205,58 @@ pub struct ModifiedCategory {
     requirements: i32,
     modified_subcategories: Vec<subcategories::ModifiedSubcategory>,
     new_subcategories: Vec<subcategories::NewSubcategory>,
+    unchanged_subcategories: Vec<subcategories::ModifiedSubcategory>,
     deleted_subcategory_ids: Vec<i32>,
+}
+
+pub enum ModifyingCategoryResult {
+    Success,
+    DatabaseError(String),
+    MissmatchingPoints(i32),
+}
+
+impl ModifiedCategory {
+    // impl block for modifying existing categories
+    pub async fn transaction_modifie(
+        &self,
+        transaction: &mut Transaction<'_, Postgres>,
+    ) -> ModifyingCategoryResult {
+        let modified_points_sum: i32 = self.modified_subcategories.iter().map(|x| x.points).sum();
+        let new_points_sum: i32 = self.new_subcategories.iter().map(|x| x.points).sum();
+        let unchanged_points_sum: i32 = self.unchanged_subcategories.iter().map(|x| x.points).sum();
+        match self.points == modified_points_sum + new_points_sum + unchanged_points_sum {
+            true => {
+                // modify the category
+                match sqlx::query(
+                    "UPDATE categories SET name = $1, points = $2, requirements = $3 WHERE id = $4",
+                )
+                .bind(&self.name)
+                .bind(&self.points)
+                .bind(&self.requirements)
+                .bind(&self.id)
+                .execute(&mut **transaction)
+                .await
+                {
+                    Ok(_) => {}
+                    Err(error) => {
+                        return ModifyingCategoryResult::DatabaseError(format!("{}", error))
+                    }
+                };
+
+                // modify the subcategories
+                for subcategory in &self.modified_subcategories {
+                    match subcategory
+                        .transaction_modify_subcategory(transaction)
+                        .await
+                    {
+                        Ok(_) => {}
+                        Err(error) => return ModifyingCategoryResult::DatabaseError(error),
+                    }
+                }
+
+                ModifyingCategoryResult::Success
+            }
+            false => ModifyingCategoryResult::MissmatchingPoints(self.id),
+        }
+    }
 }
