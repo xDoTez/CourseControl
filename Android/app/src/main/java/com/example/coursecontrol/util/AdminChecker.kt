@@ -9,7 +9,6 @@ import kotlinx.coroutines.withContext
 class AdminChecker {
 
     private var admin: Boolean = false
-
     suspend fun checkAdmin(sessionToken: SessionToken?) {
         if (sessionToken?.session_token != null && sessionToken.expiration != null) {
             val requestModel = YourRequestModel(
