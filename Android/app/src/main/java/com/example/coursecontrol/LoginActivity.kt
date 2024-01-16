@@ -1,6 +1,7 @@
 package com.example.coursecontrol
 
 
+import AdminChecker
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -37,6 +38,7 @@ class LoginActivity : AppCompatActivity() {
     lateinit var apiResponse: LoggedInUser
 
     var admin: Boolean = false
+    val adminChecker = AdminChecker()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -102,7 +104,9 @@ class LoginActivity : AppCompatActivity() {
             try {
                 val sessionToken = sessionManager.getSessionToken()
                 if (sessionToken != null) {
-                    makeApiCall(sessionToken)
+                    adminChecker.checkAdmin(sessionToken)
+                    val isAdmin = adminChecker.isAdmin()
+                    Log.d("AdminChecker", "API call successful. Status: $isAdmin")
                 } else {
                     // Handle the case when sessionToken is null
                 }
@@ -113,40 +117,4 @@ class LoginActivity : AppCompatActivity() {
     }
 
 
-    suspend fun makeApiCall(sessionToken: SessionToken) {
-        if (sessionToken.session_token != null && sessionToken.expiration != null) {
-            val requestModel = YourRequestModel(
-                    user = sessionToken.user,
-                    session_token = sessionToken.session_token,
-                    expiration = sessionToken.expiration
-            )
-
-            try {
-                val response = withContext(Dispatchers.IO) {
-                    com.example.coursecontrol.util.RetrofitInstance.apiService.checkIfAdmin(requestModel)
-                }
-
-                handleApiResponse(response)
-
-            } catch (e: Exception) {
-                handleApiError(e)
-            }
-        } else {
-            Log.e("CheckIfAdmin", "Invalid SessionToken: $sessionToken")
-        }
-    }
-
-    private fun handleApiError(e: Exception) {
-        Log.e("CheckIfAdmin", "API call failed", e)
-    }
-
-    private fun handleApiResponse(response: Admin) {
-        if (response.status == "Success") {
-            admin = response.is_admin
-            Log.d("IsAdmin", "${admin}")
-
-        } else {
-            Log.e("CheckIfAdmin", "API call unsuccessful. Status: ${response.status}")
-        }
-    }
 }
