@@ -45,14 +45,6 @@ class ProgramDisplayActivity : AppCompatActivity() {
         recyclerView.layoutManager = LinearLayoutManager(this)
 
         val addNewProgramButton: Button = findViewById(R.id.btnAddNewProgram)
-        val isAdmin = adminChecker.isAdmin()
-
-        if (!isAdmin) {
-            addNewProgramButton.visibility = View.GONE
-        }
-        addNewProgramButton.setOnClickListener {
-            showNewProgramDialog()
-        }
 
         viewModel.programDataLiveData.observe(this, Observer { programDataList ->
             val programDataAdapter = ProgramAdapter(programDataList) { selectedProgramData ->
@@ -84,6 +76,13 @@ class ProgramDisplayActivity : AppCompatActivity() {
             try {
                 val sessionToken = sessionManager.getSessionToken()
                 adminChecker.checkAdmin(sessionToken)
+                val isAdmin = adminChecker.isAdmin()
+                if (!isAdmin) {
+                    addNewProgramButton.visibility = View.GONE
+                }
+                addNewProgramButton.setOnClickListener {
+                    showNewProgramDialog()
+                }
                 if (sessionToken != null) {
                     viewModel.makeApiCall()
                 } else {
