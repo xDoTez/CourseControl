@@ -7,8 +7,8 @@ use super::User;
 #[derive(FromRow)]
 pub struct Admin {
     pub id: i32,
-    _user_id: i32,
-    _time_added: NaiveDateTime,
+    user_id: i32,
+    time_added: NaiveDateTime,
 }
 
 pub enum AddingNewAdminResult {

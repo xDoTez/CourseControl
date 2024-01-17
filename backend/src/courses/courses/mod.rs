@@ -3,6 +3,7 @@ use std::fmt::Display;
 
 use super::{session_token, users, CourseDataSortingOptions};
 use crate::{courses::subcategories, database};
+use chrono::Local;
 use rocket::serde::{Deserialize, Serialize};
 use sqlx::{Connection, FromRow, PgConnection, Postgres, Row, Transaction};
 
@@ -333,9 +334,10 @@ impl NewCourse {
     ) -> Result<(), String> {
         match course_id {
             Some(course_id) => {
-                match sqlx::query("INSERT INTO admin_course(admin, course) VALUES ($1, $2)")
+                match sqlx::query("INSERT INTO admin_course(admin, course, date_added) VALUES ($1, $2, $3)")
                     .bind(&admin_id)
                     .bind(&course_id)
+                    .bind(&Local::now().naive_local())
                     .execute(connection)
                     .await
                 {
