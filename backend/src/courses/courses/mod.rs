@@ -652,6 +652,17 @@ pub enum GettingCoursesForModification {
     RequestNotMadeByAdmin
 }
 
+impl ToString for GettingCoursesForModification {
+    fn to_string(&self) -> String {
+        match self {
+            GettingCoursesForModification::Success(_) => String::from("Success"),
+            GettingCoursesForModification::DatabaseError(_) => String::from("DatabaseError"),
+            GettingCoursesForModification::InvalidSessionToken => String::from("InvalidSessionToken"),
+            GettingCoursesForModification::RequestNotMadeByAdmin => String::from("RequestNotMadeByAdmin")
+        }
+    }
+}
+
 impl CourseTemplate {
     pub async fn get_courses_for_modification(program_id: i32, session_token: session_token::SessionToken) -> GettingCoursesForModification{
         let mut connection = match database::establish_connection_to_database().await {

@@ -597,6 +597,38 @@ async fn modify_existing_course(
     })
 }
 
+#[derive(Deserialize)]
+struct GettingCoursesFromProgIdStruct {
+    program_id: i32,
+    session_token: session_token::SessionToken
+}
+
+#[derive(Serialize)]
+struct GettingCoursesFromProgIdResult {
+    status: String,
+    courses: Option<Vec<courses::courses::CourseTemplate>>,
+    message: Option<String>
+}
+
+#[post(
+    "/get_courses_from_prog_id",
+    format = "json",
+    data = "<get_courses_from_prog_id_data>"
+)]
+async fn get_courses_from_prog_id(get_courses_from_prog_id_data: Json<GettingCoursesFromProgIdStruct>) -> Json<GettingCoursesFromProgIdResult> {
+    let get_courses_from_prog_id_data = get_courses_from_prog_id_data.into_inner();
+
+    let result = courses::courses::CourseTemplate::get_courses_for_modification(get_courses_from_prog_id_data.program_id, get_courses_from_prog_id_data.session_token).await;
+
+    Json(
+        match result {
+            courses::courses::GettingCoursesForModification::Success(cats) => GettingCoursesFromProgIdResult { status: String::from("Success"), courses: Some(cats), message: None },
+            courses::courses::GettingCoursesForModification::DatabaseError(error) => GettingCoursesFromProgIdResult { status: String::from("DatabaseError"), courses: None, message: Some(error.clone()) },
+            other => GettingCoursesFromProgIdResult { status: other.to_string(), courses: None, message: None }
+        }
+    )
+}
+
 #[launch]
 fn rocket() -> _ {
     rocket::build()
@@ -627,7 +659,8 @@ fn rocket() -> _ {
                 get_all_non_admins,
                 add_new_course,
                 add_new_program,
-                modify_existing_course
+                modify_existing_course,
+                get_courses_from_prog_id
             ],
         )
 }
