@@ -637,3 +637,66 @@ impl ModifiedCourse {
         }
     }
 }
+
+#[derive(Serialize)]
+pub struct CourseTemplate {
+    course: Course,
+    categories: Vec<categories::CategoryTemplate>
+}
+
+// Need to get all of the courses so admins can modify them 
+pub enum GettingCoursesForModification {
+    Success(Vec<CourseTemplate>),
+    DatabaseError(String),
+    InvalidSessionToken,
+    RequestNotMadeByAdmin
+}
+
+impl CourseTemplate {
+    pub async fn get_courses_for_modification(program_id: i32, session_token: session_token::SessionToken) -> GettingCoursesForModification{
+        let mut connection = match database::establish_connection_to_database().await {
+            Ok(database_url) => database_url,
+            Err(error) => return GettingCoursesForModification::DatabaseError(format!("{}", error)),
+        };
+
+        match session_token.validate_token(&mut connection).await {
+            Ok(_) => {}
+            Err(_) => return GettingCoursesForModification::InvalidSessionToken,
+        };
+
+        match users::admin::Admin::check_if_session_token_belongs_to_admin(
+            &session_token,
+            &mut connection,
+        )
+        .await
+        {
+            Ok(true) => {}
+            Ok(false) => return GettingCoursesForModification::RequestNotMadeByAdmin,
+            Err(error) => return GettingCoursesForModification::DatabaseError(error),
+        };
+
+        let courses: Vec<Course> = match sqlx::query_as("SELECT c.id, c.name, c.semester, c.ects FROM course_progam JOIN courses as c ON course_progam.course_id = c.id WHERE course_progam.program_id = $1")
+            .bind(&program_id)
+            .fetch_all(&mut connection)
+            .await
+        {
+            Ok(courses) => courses,
+            Err(error) => return GettingCoursesForModification::DatabaseError(format!("{}", error))
+        };
+
+        let mut course_templates: Vec<CourseTemplate> = Vec::new();
+        for course in courses {
+            match course.id {
+                None => return GettingCoursesForModification::DatabaseError(String::from("Course did not have an ID")),
+                Some(course_id) => {
+                    match categories::CategoryTemplate::get_categories(course_id, &mut connection).await {
+                        Ok(cats) => course_templates.push( CourseTemplate { course: course, categories: cats } ),
+                        Err(error) => return GettingCoursesForModification::DatabaseError(error)
+                    }
+                }
+            }
+        }
+
+        GettingCoursesForModification::Success(course_templates)
+    }
+}

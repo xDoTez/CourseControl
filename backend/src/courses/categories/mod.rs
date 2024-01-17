@@ -283,3 +283,35 @@ impl ModifiedCategory {
         }
     }
 }
+
+#[derive(Serialize, FromRow)]
+pub struct CategoryTemplate {
+    category: Category,
+    subcategories: Vec<subcategories::Subcategory>
+}
+
+impl CategoryTemplate {
+    pub async fn get_categories(course_id: i32, connectio: &mut PgConnection) -> Result<Vec<CategoryTemplate>, String> {
+        let categories: Vec<Category> = match sqlx::query_as("SELECT id, course_id, name, points, requirements FROM categories WHERE course_id = $1")
+            .bind(&course_id)
+            .fetch_all(&mut *connectio)
+            .await
+            {
+                Ok(categories) => categories,
+                Err(error) => return Err(format!("{}", error))
+            };
+        
+        let mut category_templates: Vec<CategoryTemplate> = Vec::new();
+        for category in categories {
+            match category.id {
+                None => return Err(String::from("Category missing ID")),
+                Some(cat_id) => match subcategories::get_subcategories(cat_id, &mut *connectio).await {
+                    Ok(subcats) => category_templates.push(CategoryTemplate { category: category, subcategories: subcats }),
+                    Err(error) => return Err(error)
+                }
+            }
+        }
+
+        Ok(category_templates)
+    }
+}

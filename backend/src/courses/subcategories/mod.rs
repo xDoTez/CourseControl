@@ -3,9 +3,9 @@ use sqlx::{FromRow, PgConnection, Postgres, Transaction};
 
 #[derive(Serialize, Deserialize, FromRow, Clone)]
 pub struct Subcategory {
-    id: Option<i32>,
+    pub id: Option<i32>,
     pub category_id: i32,
-    name: String,
+    pub name: String,
     pub points: i32,
     pub requirements: i32,
 }

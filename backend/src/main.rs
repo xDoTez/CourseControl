@@ -287,67 +287,6 @@ async fn get_all_addable_courses(
 }
 
 #[derive(Deserialize)]
-struct CourseDataAndSessionToken {
-    session_token: session_token::SessionToken,
-    course_data: courses::CourseData,
-}
-
-#[derive(Serialize)]
-struct CourseDataModificationResult {
-    status: String,
-    message: Option<String>,
-}
-
-#[post(
-    "/modify_existing_course_data",
-    format = "json",
-    data = "<course_data>"
-)]
-async fn modify_existing_course_data(
-    course_data: Json<CourseDataAndSessionToken>,
-) -> Json<CourseDataModificationResult> {
-    // Added the new function created in courses module here
-    let course_data = course_data.into_inner();
-
-    let result =
-        courses::modify_user_course_data(course_data.course_data, course_data.session_token).await;
-    Json(match &result {
-        courses::ModifyUserCourseDataResult::DatabaseError(error) => CourseDataModificationResult {
-            status: result.to_string(),
-            message: Some(error.clone()),
-        },
-        courses::ModifyUserCourseDataResult::CategoryGettingError(error) => {
-            CourseDataModificationResult {
-                status: result.to_string(),
-                message: Some(error.clone()),
-            }
-        }
-        courses::ModifyUserCourseDataResult::UnequalCourseData(error) => {
-            CourseDataModificationResult {
-                status: result.to_string(),
-                message: Some(error.to_string()),
-            }
-        }
-        courses::ModifyUserCourseDataResult::InvalidChangedData(error) => {
-            CourseDataModificationResult {
-                status: result.to_string(),
-                message: Some(error.to_string()),
-            }
-        }
-        courses::ModifyUserCourseDataResult::DataModificationError(error) => {
-            CourseDataModificationResult {
-                status: result.to_string(),
-                message: Some(error.to_string()),
-            }
-        }
-        other => CourseDataModificationResult {
-            status: other.to_string(),
-            message: None,
-        },
-    })
-}
-
-#[derive(Deserialize)]
 struct UserIdSessionToken {
     user_id: i32,
     session_token: session_token::SessionToken,
@@ -678,7 +617,6 @@ fn rocket() -> _ {
             "/courses",
             routes![
                 get_all_addable_courses,
-                modify_existing_course_data,
                 toggle_user_course_activity
             ],
         )
