@@ -287,6 +287,66 @@ async fn get_all_addable_courses(
 }
 
 #[derive(Deserialize)]
+struct CourseDataAndSessionToken {
+    session_token: session_token::SessionToken,
+    course_data: courses::CourseData,
+}
+
+#[derive(Serialize)]
+struct CourseDataModificationResult {
+    status: String,
+    message: Option<String>,
+}
+
+#[post(
+    "/modify_existing_course_data",
+    format = "json",
+    data = "<course_data>"
+)]
+async fn modify_existing_course_data(
+    course_data: Json<CourseDataAndSessionToken>,
+) -> Json<CourseDataModificationResult> {
+    let course_data = course_data.into_inner();
+
+    let result =
+        courses::modify_user_course_data(course_data.course_data, course_data.session_token).await;
+    Json(match &result {
+        courses::ModifyUserCourseDataResult::DatabaseError(error) => CourseDataModificationResult {
+            status: result.to_string(),
+            message: Some(error.clone()),
+        },
+        courses::ModifyUserCourseDataResult::CategoryGettingError(error) => {
+            CourseDataModificationResult {
+                status: result.to_string(),
+                message: Some(error.clone()),
+            }
+        }
+        courses::ModifyUserCourseDataResult::UnequalCourseData(error) => {
+            CourseDataModificationResult {
+                status: result.to_string(),
+                message: Some(error.to_string()),
+            }
+        }
+        courses::ModifyUserCourseDataResult::InvalidChangedData(error) => {
+            CourseDataModificationResult {
+                status: result.to_string(),
+                message: Some(error.to_string()),
+            }
+        }
+        courses::ModifyUserCourseDataResult::DataModificationError(error) => {
+            CourseDataModificationResult {
+                status: result.to_string(),
+                message: Some(error.to_string()),
+            }
+        }
+        other => CourseDataModificationResult {
+            status: other.to_string(),
+            message: None,
+        },
+    })
+}
+
+#[derive(Deserialize)]
 struct UserIdSessionToken {
     user_id: i32,
     session_token: session_token::SessionToken,
@@ -600,14 +660,14 @@ async fn modify_existing_course(
 #[derive(Deserialize)]
 struct GettingCoursesFromProgIdStruct {
     program_id: i32,
-    session_token: session_token::SessionToken
+    session_token: session_token::SessionToken,
 }
 
 #[derive(Serialize)]
 struct GettingCoursesFromProgIdResult {
     status: String,
     courses: Option<Vec<courses::courses::CourseTemplate>>,
-    message: Option<String>
+    message: Option<String>,
 }
 
 #[post(
@@ -615,19 +675,39 @@ struct GettingCoursesFromProgIdResult {
     format = "json",
     data = "<get_courses_from_prog_id_data>"
 )]
-async fn get_courses_from_prog_id(get_courses_from_prog_id_data: Json<GettingCoursesFromProgIdStruct>) -> Json<GettingCoursesFromProgIdResult> {
+async fn get_courses_from_prog_id(
+    get_courses_from_prog_id_data: Json<GettingCoursesFromProgIdStruct>,
+) -> Json<GettingCoursesFromProgIdResult> {
     let get_courses_from_prog_id_data = get_courses_from_prog_id_data.into_inner();
 
-    let result = courses::courses::CourseTemplate::get_courses_for_modification(get_courses_from_prog_id_data.program_id, get_courses_from_prog_id_data.session_token).await;
-
-    Json(
-        match result {
-            courses::courses::GettingCoursesForModification::Success(cats) => GettingCoursesFromProgIdResult { status: String::from("Success"), courses: Some(cats), message: None },
-            courses::courses::GettingCoursesForModification::DatabaseError(error) => GettingCoursesFromProgIdResult { status: String::from("DatabaseError"), courses: None, message: Some(error.clone()) },
-            other => GettingCoursesFromProgIdResult { status: other.to_string(), courses: None, message: None }
-        }
+    let result = courses::courses::CourseTemplate::get_courses_for_modification(
+        get_courses_from_prog_id_data.program_id,
+        get_courses_from_prog_id_data.session_token,
     )
-}
+    .await;
+
+    Json(match result {
+        courses::courses::GettingCoursesForModification::Success(cats) => {
+            GettingCoursesFromProgIdResult {
+                status: String::from("Success"),
+                courses: Some(cats),
+                message: None,
+            }
+        }
+        courses::courses::GettingCoursesForModification::DatabaseError(error) => {
+            GettingCoursesFromProgIdResult {
+                status: String::from("DatabaseError"),
+                courses: None,
+                message: Some(error.clone()),
+            }
+        }
+        other => GettingCoursesFromProgIdResult {
+            status: other.to_string(),
+            courses: None,
+            message: None,
+        },
+    })
+} // Test this tomorrow or something
 
 #[launch]
 fn rocket() -> _ {
@@ -647,10 +727,7 @@ fn rocket() -> _ {
         .mount("/programs", routes![get_all_programs])
         .mount(
             "/courses",
-            routes![
-                get_all_addable_courses,
-                toggle_user_course_activity
-            ],
+            routes![get_all_addable_courses, toggle_user_course_activity, modify_existing_course_data],
         )
         .mount(
             "/admin",
