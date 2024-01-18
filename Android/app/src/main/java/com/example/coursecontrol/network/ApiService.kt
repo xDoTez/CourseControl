@@ -4,6 +4,7 @@ import com.example.coursecontrol.model.AddNewCourse
 import com.example.coursecontrol.model.Admin
 import com.example.coursecontrol.model.ApiResponse
 import com.example.coursecontrol.model.ApiResponseAddNewCourse
+import com.example.coursecontrol.model.EditCourseData
 import com.example.coursecontrol.model.NewCourses
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -55,4 +56,7 @@ interface ApiService {
 
     @POST("http://165.232.76.112:8000/users/check_if_user_is_admin")
     suspend fun checkIfAdmin(@Body request: YourRequestModel): Admin
+
+    @POST("http://165.232.76.112:8000/courses/modify_existing_course_data")
+    suspend fun editCourseData(@Body request: EditCourseData): AddNewCourse
 }
