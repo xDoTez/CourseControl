@@ -1,11 +1,11 @@
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, PgConnection};
+use sqlx::{FromRow, PgConnection, Postgres, Transaction};
 
 #[derive(Serialize, Deserialize, FromRow, Clone)]
 pub struct Subcategory {
-    id: Option<i32>,
+    pub id: Option<i32>,
     pub category_id: i32,
-    name: String,
+    pub name: String,
     pub points: i32,
     pub requirements: i32,
 }
@@ -134,6 +134,56 @@ impl NewSubcategory // impl block for adding new courses
                         Err(error) => Err(format!("{}", error))
                     }
             }
+        }
+    }
+
+    pub async fn transaction_insert_new_subcategory(
+        &self,
+        connection: &mut Transaction<'_, Postgres>,
+    ) -> Result<(), String> {
+        match &self.category_id {
+            None => Err(String::from("Missing category id")),
+            Some(id) => {
+                match sqlx::query("INSERT INTO subcategories(category_id, name, points, requirements) VALUES ($1, $2, $3, $4)")
+                    .bind(&id)
+                    .bind(&self.name)
+                    .bind(&self.points)
+                    .bind(&self.requirements)
+                    .execute(&mut **connection)
+                    .await {
+                        Ok(_) => Ok(()),
+                        Err(error) => Err(format!("{}", error))
+                    }
+            }
+        }
+    }
+}
+
+#[derive(Deserialize)]
+pub struct ModifiedSubcategory {
+    pub id: i32,
+    pub name: String,
+    pub points: i32,
+    pub requirements: i32,
+}
+
+impl ModifiedSubcategory {
+    pub async fn transaction_modify_subcategory(
+        &self,
+        transaction: &mut Transaction<'_, Postgres>,
+    ) -> Result<(), String> {
+        match sqlx::query(
+            "UPDATE subcategories SET name = $1, points = $2, requirements = $3 WHERE id = $4",
+        )
+        .bind(&self.name)
+        .bind(&self.points)
+        .bind(&self.requirements)
+        .bind(&self.id)
+        .execute(&mut **transaction)
+        .await
+        {
+            Ok(_) => Ok(()),
+            Err(error) => Err(format!("{}", error)),
         }
     }
 }

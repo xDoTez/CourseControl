@@ -1,9 +1,11 @@
+use super::categories;
 use std::fmt::Display;
 
-use super::{categories, session_token, users, CourseDataSortingOptions};
+use super::{session_token, users, CourseDataSortingOptions};
 use crate::{courses::subcategories, database};
+use chrono::Local;
 use rocket::serde::{Deserialize, Serialize};
-use sqlx::{FromRow, PgConnection, Row};
+use sqlx::{Connection, FromRow, PgConnection, Postgres, Row, Transaction};
 
 #[derive(Serialize, Deserialize, FromRow, Clone)]
 pub struct Course {
@@ -332,9 +334,10 @@ impl NewCourse {
     ) -> Result<(), String> {
         match course_id {
             Some(course_id) => {
-                match sqlx::query("INSERT INTO admin_course(admin, course) VALUES ($1, $2)")
+                match sqlx::query("INSERT INTO admin_course(admin, course, date_added) VALUES ($1, $2, $3)")
                     .bind(&admin_id)
                     .bind(&course_id)
+                    .bind(&Local::now().naive_local())
                     .execute(connection)
                     .await
                 {
@@ -445,5 +448,266 @@ impl UserCourse // impl block for toggling activity
             };
 
         Ok(user_courses)
+    }
+}
+
+#[derive(Deserialize)]
+pub struct ModifiedCourse {
+    id: i32,
+    name: String,
+    semester: i32,
+    ects: i32,
+    modified_categories: Vec<categories::ModifiedCategory>,
+    new_categories: Vec<categories::NewCategory>,
+    deleted_category_ids: Vec<i32>,
+}
+
+pub enum ModifyingCourseResult {
+    Success,
+    DatabaseError(String),
+    InvalidSessionToken,
+    RequestMadeByNonAdmin,
+    TransactionInitializationError,
+    TransactionCommitingError,
+    NewCategoryInsertionError(String),
+    ErrorDeletingCategory(i32),
+}
+
+impl ToString for ModifyingCourseResult {
+    fn to_string(&self) -> String {
+        match self {
+            ModifyingCourseResult::Success => String::from("Success"),
+            ModifyingCourseResult::DatabaseError(_) => String::from("DatabaseError"),
+            ModifyingCourseResult::InvalidSessionToken => String::from("InvalidSessionToken"),
+            ModifyingCourseResult::RequestMadeByNonAdmin => String::from("RequestMadeByNonAdmin"),
+            ModifyingCourseResult::TransactionInitializationError => {
+                String::from("TransactionInitializationError")
+            }
+            ModifyingCourseResult::TransactionCommitingError => {
+                String::from("TransactionCommitingError")
+            }
+            ModifyingCourseResult::NewCategoryInsertionError(_) => {
+                String::from("NewCategoryInsertionError")
+            }
+            ModifyingCourseResult::ErrorDeletingCategory(_) => {
+                String::from("ErrorDeletingCategory")
+            }
+        }
+    }
+}
+
+impl ModifiedCourse {
+    pub async fn modify_course(
+        &mut self,
+        session_token: session_token::SessionToken,
+    ) -> ModifyingCourseResult {
+        let mut connection = match database::establish_connection_to_database().await {
+            Ok(database_url) => database_url,
+            Err(error) => return ModifyingCourseResult::DatabaseError(error),
+        };
+
+        match session_token.validate_token(&mut connection).await {
+            Ok(_) => {}
+            Err(_) => return ModifyingCourseResult::InvalidSessionToken,
+        };
+
+        match users::admin::Admin::check_if_session_token_belongs_to_admin(
+            &session_token,
+            &mut connection,
+        )
+        .await
+        {
+            Ok(true) => {}
+            Ok(false) => return ModifyingCourseResult::RequestMadeByNonAdmin,
+            Err(error) => return ModifyingCourseResult::DatabaseError(error),
+        };
+
+        let mut transaction = match connection.begin().await {
+            Ok(transaction) => transaction,
+            Err(_) => return ModifyingCourseResult::TransactionInitializationError,
+        };
+
+        match ModifiedCourse::transaction_insert_new_categories(
+            &mut self.new_categories,
+            self.id,
+            &mut transaction,
+        )
+        .await
+        {
+            Ok(_) => {}
+            Err(error) => return ModifyingCourseResult::NewCategoryInsertionError(error),
+        };
+
+        match categories::NewCategory::transaction_delete_categories_by_ids(
+            &self.deleted_category_ids,
+            &mut transaction,
+        )
+        .await
+        {
+            Ok(_) => {}
+            Err(error_id) => return ModifyingCourseResult::ErrorDeletingCategory(error_id),
+        };
+
+        match ModifiedCourse::transaction_modify_existing_categories(
+            &self.modified_categories,
+            &mut transaction,
+        )
+        .await
+        {
+            Ok(_) => {}
+            Err(error) => return ModifyingCourseResult::DatabaseError(error),
+        };
+
+        match self.transaction_modify_course_info(&mut transaction).await {
+            Ok(_) => {}
+            Err(error) => return ModifyingCourseResult::DatabaseError(error),
+        };
+
+        match transaction.commit().await {
+            Ok(_) => ModifyingCourseResult::Success,
+            Err(_) => ModifyingCourseResult::TransactionCommitingError,
+        }
+    }
+
+    async fn transaction_insert_new_categories(
+        categories: &mut Vec<categories::NewCategory>,
+        course_id: i32,
+        transaction: &mut Transaction<'_, Postgres>,
+    ) -> Result<(), String> {
+        for category in categories {
+            category.course_id = Some(course_id);
+            match category.transaction_insert_new_category(transaction).await {
+                Ok(id) => match &mut category.subcategories {
+                    Some(subcategories) => {
+                        for subcategory in subcategories {
+                            subcategory.category_id = Some(id);
+                            match subcategory
+                                .transaction_insert_new_subcategory(transaction)
+                                .await
+                            {
+                                Ok(_) => {}
+                                Err(error) => return Err(format!("{}", error)),
+                            }
+                        }
+                    }
+                    None => {}
+                },
+                Err(error) => return Err(error),
+            }
+        }
+        Ok(())
+    }
+
+    async fn transaction_modify_existing_categories(
+        categories: &Vec<categories::ModifiedCategory>,
+        transaction: &mut Transaction<'_, Postgres>,
+    ) -> Result<(), String> {
+        for category in categories {
+            match category.transaction_modifie(transaction).await {
+                categories::ModifyingCategoryResult::Success => {}
+                categories::ModifyingCategoryResult::DatabaseError(error) => {
+                    return Err(format!("{}", error))
+                }
+                categories::ModifyingCategoryResult::MissmatchingPoints(category_id) => {
+                    return Err(format!(
+                        "Points between category with id {} and it's subcategories are not equal",
+                        category_id
+                    ))
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    async fn transaction_modify_course_info(
+        &self,
+        transaction: &mut Transaction<'_, Postgres>,
+    ) -> Result<(), String> {
+        match sqlx::query("UPDATE courses SET name = $1, semester = $2, ects = $3 WHERE id = $4")
+            .bind(&self.name)
+            .bind(&self.semester)
+            .bind(&self.ects)
+            .bind(&self.id)
+            .execute(&mut **transaction)
+            .await
+        {
+            Ok(_) => Ok(()),
+            Err(error) => Err(format!("{}", error)),
+        }
+    }
+}
+
+#[derive(Serialize)]
+pub struct CourseTemplate {
+    course: Course,
+    categories: Vec<categories::CategoryTemplate>
+}
+
+// Need to get all of the courses so admins can modify them 
+pub enum GettingCoursesForModification {
+    Success(Vec<CourseTemplate>),
+    DatabaseError(String),
+    InvalidSessionToken,
+    RequestNotMadeByAdmin
+}
+
+impl ToString for GettingCoursesForModification {
+    fn to_string(&self) -> String {
+        match self {
+            GettingCoursesForModification::Success(_) => String::from("Success"),
+            GettingCoursesForModification::DatabaseError(_) => String::from("DatabaseError"),
+            GettingCoursesForModification::InvalidSessionToken => String::from("InvalidSessionToken"),
+            GettingCoursesForModification::RequestNotMadeByAdmin => String::from("RequestNotMadeByAdmin")
+        }
+    }
+}
+
+impl CourseTemplate {
+    pub async fn get_courses_for_modification(program_id: i32, session_token: session_token::SessionToken) -> GettingCoursesForModification{
+        let mut connection = match database::establish_connection_to_database().await {
+            Ok(database_url) => database_url,
+            Err(error) => return GettingCoursesForModification::DatabaseError(format!("{}", error)),
+        };
+
+        match session_token.validate_token(&mut connection).await {
+            Ok(_) => {}
+            Err(_) => return GettingCoursesForModification::InvalidSessionToken,
+        };
+
+        match users::admin::Admin::check_if_session_token_belongs_to_admin(
+            &session_token,
+            &mut connection,
+        )
+        .await
+        {
+            Ok(true) => {}
+            Ok(false) => return GettingCoursesForModification::RequestNotMadeByAdmin,
+            Err(error) => return GettingCoursesForModification::DatabaseError(error),
+        };
+
+        let courses: Vec<Course> = match sqlx::query_as("SELECT c.id, c.name, c.semester, c.ects FROM course_progam JOIN courses as c ON course_progam.course_id = c.id WHERE course_progam.program_id = $1")
+            .bind(&program_id)
+            .fetch_all(&mut connection)
+            .await
+        {
+            Ok(courses) => courses,
+            Err(error) => return GettingCoursesForModification::DatabaseError(format!("{}", error))
+        };
+
+        let mut course_templates: Vec<CourseTemplate> = Vec::new();
+        for course in courses {
+            match course.id {
+                None => return GettingCoursesForModification::DatabaseError(String::from("Course did not have an ID")),
+                Some(course_id) => {
+                    match categories::CategoryTemplate::get_categories(course_id, &mut connection).await {
+                        Ok(cats) => course_templates.push( CourseTemplate { course: course, categories: cats } ),
+                        Err(error) => return GettingCoursesForModification::DatabaseError(error)
+                    }
+                }
+            }
+        }
+
+        GettingCoursesForModification::Success(course_templates)
     }
 }

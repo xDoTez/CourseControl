@@ -306,7 +306,6 @@ struct CourseDataModificationResult {
 async fn modify_existing_course_data(
     course_data: Json<CourseDataAndSessionToken>,
 ) -> Json<CourseDataModificationResult> {
-    // Added the new function created in courses module here
     let course_data = course_data.into_inner();
 
     let result =
@@ -607,6 +606,109 @@ async fn toggle_user_course_activity(
     })
 }
 
+// Create new route for modifying courses
+#[derive(Deserialize)]
+struct ModifyingExistingCourseStruct {
+    modified_course: courses::courses::ModifiedCourse,
+    session_token: session_token::SessionToken,
+}
+
+#[derive(Serialize)]
+struct ModifyingExistingCourseResult {
+    status: String,
+    message: Option<String>,
+}
+
+#[post(
+    "/modify_existing_course",
+    format = "json",
+    data = "<modifying_existing_course_data>"
+)]
+async fn modify_existing_course(
+    modifying_existing_course_data: Json<ModifyingExistingCourseStruct>,
+) -> Json<ModifyingExistingCourseResult> {
+    let mut data = modifying_existing_course_data.into_inner();
+
+    let result = data.modified_course.modify_course(data.session_token).await;
+
+    Json(match &result {
+        courses::courses::ModifyingCourseResult::DatabaseError(error) => {
+            ModifyingExistingCourseResult {
+                status: result.to_string(),
+                message: Some(error.clone()),
+            }
+        }
+        courses::courses::ModifyingCourseResult::NewCategoryInsertionError(error) => {
+            ModifyingExistingCourseResult {
+                status: result.to_string(),
+                message: Some(error.clone()),
+            }
+        }
+        courses::courses::ModifyingCourseResult::ErrorDeletingCategory(id) => {
+            ModifyingExistingCourseResult {
+                status: result.to_string(),
+                message: Some(format!("Unable to delete category with ID: {}", id)),
+            }
+        }
+        other => ModifyingExistingCourseResult {
+            status: other.to_string(),
+            message: None,
+        },
+    })
+}
+
+#[derive(Deserialize)]
+struct GettingCoursesFromProgIdStruct {
+    program_id: i32,
+    session_token: session_token::SessionToken,
+}
+
+#[derive(Serialize)]
+struct GettingCoursesFromProgIdResult {
+    status: String,
+    courses: Option<Vec<courses::courses::CourseTemplate>>,
+    message: Option<String>,
+}
+
+#[post(
+    "/get_courses_from_prog_id",
+    format = "json",
+    data = "<get_courses_from_prog_id_data>"
+)]
+async fn get_courses_from_prog_id(
+    get_courses_from_prog_id_data: Json<GettingCoursesFromProgIdStruct>,
+) -> Json<GettingCoursesFromProgIdResult> {
+    let get_courses_from_prog_id_data = get_courses_from_prog_id_data.into_inner();
+
+    let result = courses::courses::CourseTemplate::get_courses_for_modification(
+        get_courses_from_prog_id_data.program_id,
+        get_courses_from_prog_id_data.session_token,
+    )
+    .await;
+
+    Json(match result {
+        courses::courses::GettingCoursesForModification::Success(cats) => {
+            GettingCoursesFromProgIdResult {
+                status: String::from("Success"),
+                courses: Some(cats),
+                message: None,
+            }
+        }
+        courses::courses::GettingCoursesForModification::DatabaseError(error) => {
+            GettingCoursesFromProgIdResult {
+                status: String::from("DatabaseError"),
+                courses: None,
+                message: Some(error.clone()),
+            }
+        }
+        other => GettingCoursesFromProgIdResult {
+            status: other.to_string(),
+            courses: None,
+            message: None,
+        },
+    })
+} // Test this tomorrow or something
+
 #[launch]
 fn rocket() -> _ {
     rocket::build()
@@ -625,11 +727,7 @@ fn rocket() -> _ {
         .mount("/programs", routes![get_all_programs])
         .mount(
             "/courses",
-            routes![
-                get_all_addable_courses,
-                modify_existing_course_data,
-                toggle_user_course_activity
-            ],
+            routes![get_all_addable_courses, toggle_user_course_activity, modify_existing_course_data],
         )
         .mount(
             "/admin",
@@ -637,7 +735,9 @@ fn rocket() -> _ {
                 add_new_admin,
                 get_all_non_admins,
                 add_new_course,
-                add_new_program
+                add_new_program,
+                modify_existing_course,
+                get_courses_from_prog_id
             ],
         )
 }
