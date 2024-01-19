@@ -81,8 +81,6 @@ interface ApiService {
     @POST("http://165.232.76.112:8000/admin/add_new_admin")
     suspend fun addNewAdmin(@Body request: NewAdminModel): AddNewAdmin
 
-
-
     @POST("http://165.232.76.112:8000/courses/modify_existing_course_data")
     suspend fun editCourseData(@Body request: EditCourseData): AddNewCourse
 }
