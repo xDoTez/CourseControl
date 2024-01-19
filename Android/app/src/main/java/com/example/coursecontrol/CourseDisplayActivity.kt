@@ -1,9 +1,11 @@
 package com.example.coursecontrol
 
+import AdminChecker
 import UserDataAdapter
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Button
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -12,6 +14,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.coursecontrol.addNewCourse.ProgramDisplayActivity
+import com.example.coursecontrol.adminPrivileges.UserDisplayActivity
 import com.example.coursecontrol.model.CourseData
 import com.example.coursecontrol.util.SessionManager
 import com.example.coursecontrol.viewmodel.CourseViewModel
@@ -21,18 +24,17 @@ import kotlinx.coroutines.launch
 class CourseDisplayActivity : AppCompatActivity() {
     private val viewModel: CourseViewModel by viewModels()
     private lateinit var sessionManager: SessionManager
-
+    val adminChecker = AdminChecker()
     private lateinit var btnAlphAsc: Button
     private lateinit var btnAlphDesc: Button
     private lateinit var btnSemAsc: Button
     private lateinit var btnSemDesc: Button
     private lateinit var btnAddNewCourse: Button
+    private lateinit var btnUsers : Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.course_display_activity)
-        Log.d("tu", "tu")
-
         sessionManager = SessionManager(this)
 
         val recyclerView: RecyclerView = findViewById(R.id.recyclerView)
@@ -42,6 +44,12 @@ class CourseDisplayActivity : AppCompatActivity() {
         historyButton.setOnClickListener {
             val historyIntent = Intent(this, CourseDisplayHistoryActivity::class.java)
             startActivity(historyIntent)
+        }
+
+        val usersButton: Button = findViewById(R.id.btnUsers)
+        usersButton.setOnClickListener {
+            val usersIntent = Intent(this, UserDisplayActivity::class.java)
+            startActivity(usersIntent)
         }
 
         btnAddNewCourse = findViewById(R.id.btnAddNewCourse)
@@ -79,9 +87,18 @@ class CourseDisplayActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val sessionToken = sessionManager.getSessionToken()
+                adminChecker.checkAdmin(sessionToken)
                 if (sessionToken != null) {
                     viewModel.makeApiCall(sessionToken)
                 } else {
+                }
+                val usersButton: Button = findViewById(R.id.btnUsers)
+                val isAdmin = adminChecker.isAdmin()
+                if (isAdmin) {
+                    usersButton.visibility = View.VISIBLE
+                }
+                else{
+                    usersButton.visibility = View.GONE
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
