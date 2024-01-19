@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
+import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -12,7 +13,7 @@ import com.example.coursecontrol.model.CategoryData
 import com.example.coursecontrol.model.CourseData
 
 class CourseDetailsActivity : AppCompatActivity() {
-    private lateinit var btnEditCourseData: Button
+    private lateinit var btnEditCourseData: ImageButton
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

@@ -7,6 +7,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import com.example.coursecontrol.R
 import com.example.coursecontrol.SessionToken
 import com.example.coursecontrol.model.AddNewCourse
@@ -40,7 +41,6 @@ class EditCourseDataActivity : AppCompatActivity() {
         sessionManager = SessionManager(this)
 
         val courseData: CourseData? = intent.getSerializableExtra("course_data") as? CourseData
-        Log.d("courseData", "$courseData")
 
         if (courseData != null) {
             val courseName: TextView = findViewById(R.id.txtCourseName)
@@ -66,6 +66,26 @@ class EditCourseDataActivity : AppCompatActivity() {
         btnSave = findViewById(R.id.btnSaveEdit)
         btnSave.setOnClickListener {
 
+            if (courseData != null) {
+                for (item in courseData.catagories) {
+                    for (category in editTextCategoryList) {
+                        if (item.category.id == category.id && item.subcategories?.isEmpty() == false) {
+                            var points = 0
+                            for (subcategory in item.subcategories) {
+                                for (sub in editTextSubcategoryList) {
+                                    if (subcategory.subcategory.id == sub.id) {
+                                        points += sub.text.toString().toInt()
+                                    }
+                                }
+                            }
+                            if (points != category.text.toString().toInt()) {
+                                pointsNotMatching(item.category.name)
+                                return@setOnClickListener
+                            }
+                        }
+                    }
+                }
+            }
             val sessionToken = sessionManager.getSessionToken()
             if (sessionToken != null) {
                 if (courseData != null) {
@@ -206,5 +226,17 @@ class EditCourseDataActivity : AppCompatActivity() {
         } else {
             Log.e("EditCourseData", "API call unsuccessful. Status: ${response.status}")
         }
+    }
+
+    private fun pointsNotMatching(category: String) {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Alert")
+        builder.setMessage("Points for category $category and its subcategory points doesn't match.")
+        builder.setPositiveButton("OK")
+        { dialog, _ ->
+            dialog.dismiss()
+        }
+        val alertDialog: AlertDialog = builder.create()
+        alertDialog.show()
     }
 }
