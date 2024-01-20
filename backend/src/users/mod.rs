@@ -1,4 +1,6 @@
-use chrono::{Datelike, Local, NaiveDateTime, Timelike};
+use chrono::{Datelike, Duration, Local, NaiveDateTime, Timelike};
+use rand::{distributions::Alphanumeric, thread_rng, Rng};
+use rocket::time::Duration;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgConnection};
 use std::collections::hash_map::DefaultHasher;
@@ -325,5 +327,72 @@ impl User // impl block for user login
         };
 
         Ok(users)
+    }
+}
+
+fn generate_random_string(length: usize) -> String {
+    let mut rng = thread_rng();
+    let random_string: String = rng.sample_iter(&Alphanumeric).take(length).collect();
+    random_string
+}
+
+pub enum SendingResetCodeResult {
+    Success,
+    DatabaseError(String),
+    UserWithEmailNotFound,
+    TooManyUsersWithSameEmail,
+    UserDidNotHaveId,
+}
+
+impl User {
+    // impl block for password reseting
+    pub async fn send_reset_code(email: String) -> SendingResetCodeResult {
+        let mut connection = match database::establish_connection_to_database().await {
+            Ok(database_url) => database_url,
+            Err(error) => {
+                return SendingResetCodeResult::DatabaseError(format!(
+                    "Error while fetching database URL from environment: {}",
+                    error
+                ))
+            }
+        };
+
+        let users: Vec<User> = match sqlx::query_as("SELECT id, username, password, email, datetime_of_creation FROM users WHERE email = $1")
+            .bind(&email)
+            .fetch_all(&mut connection)
+            .await
+            {
+                Ok(users) => users,
+                Err(error) => return SendingResetCodeResult::DatabaseError(format!("{}", error))
+            };
+
+        match users.len() {
+            0 => SendingResetCodeResult::UserWithEmailNotFound,
+            1 => {
+                match users[0].id {
+                    None => SendingResetCodeResult::UserDidNotHaveId,
+                    Some(id) => {
+                        let code = Local::now().naive_local() + Duration::minutes(30);
+                        match sqlx::query("INSERT INTO password_resets(user, expiration_timestamp, code) VALUES($1, $2, $3)")
+                            .bind(&id)
+                            .bind(&code)
+                            .bind(&generate_random_string(100))
+                            .execute(&mut connection)
+                            .await
+                            {
+                                Ok(_) => {
+                                    // Send email here
+                                    SendingResetCodeResult::Success
+                                }
+                                Err(error) => SendingResetCodeResult::DatabaseError(format!("{}", error))
+                            }
+                    }
+            }},
+            _other => SendingResetCodeResult::TooManyUsersWithSameEmail
+        }
+    }
+
+    async fn send_reset_email(email: &String, code: &String) -> Result<(), String> {
+        todo!()
     }
 }

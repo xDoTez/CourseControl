@@ -707,7 +707,24 @@ async fn get_courses_from_prog_id(
             message: None,
         },
     })
-} // Test this tomorrow or something
+}
+
+#[derive(Serialize)]
+struct SendingResetCodeResult {
+    status: String,
+    message: Option<String>
+}
+
+#[post(
+    "/send_reset_code",
+    format = "json",
+    data = "<send_reset_code_data>"
+)]
+async fn send_reset_code(
+    send_reset_code_data: Json<String>,
+) -> Json<SendingResetCodeResult> {
+    todo!()
+}
 
 #[launch]
 fn rocket() -> _ {
