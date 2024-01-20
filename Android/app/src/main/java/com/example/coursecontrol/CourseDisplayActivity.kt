@@ -39,7 +39,7 @@ class CourseDisplayActivity : AppCompatActivity() {
         sessionManager = SessionManager(this)
 
 
-        var spinner = findViewById<Spinner>(R.id.spinner)
+        val spinner = findViewById<Spinner>(R.id.spinner)
         val sortOptions = listOf("Name ascending", "Name descending", "Semester ascending", "Semester descending")
         val adapter = ArrayAdapter<String>(this, R.layout.sort_options, sortOptions)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
@@ -106,7 +106,7 @@ class CourseDisplayActivity : AppCompatActivity() {
             }
 
             override fun onNothingSelected(p0: AdapterView<*>?) {
-                TODO("Not yet implemented")
+
             }
 
         }
