@@ -1,13 +1,14 @@
-use chrono::{Datelike, Local, NaiveDateTime, Timelike};
+use chrono::{Datelike, Duration, Local, NaiveDateTime, Timelike};
+use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, PgConnection};
+use sqlx::{FromRow, PgConnection, Row};
 use std::collections::hash_map::DefaultHasher;
 use std::fmt::{Debug, Display};
 use std::hash::{Hash, Hasher};
 
-use crate::database;
 use crate::regex_checks;
 use crate::session_token;
+use crate::{database, ResstingPasswordResult};
 
 pub mod admin;
 
@@ -325,5 +326,198 @@ impl User // impl block for user login
         };
 
         Ok(users)
+    }
+}
+
+fn generate_random_string(length: usize) -> String {
+    let rng = thread_rng();
+    let random_string: String = rng
+        .sample_iter(&Alphanumeric)
+        .take(length)
+        .map(char::from)
+        .collect();
+    random_string
+}
+
+pub enum SendingResetCodeResult {
+    Success(String),
+    DatabaseError(String),
+    UserWithEmailNotFound,
+    TooManyUsersWithSameEmail,
+    UserDidNotHaveId,
+}
+
+impl ToString for SendingResetCodeResult {
+    fn to_string(&self) -> String {
+        match self {
+            SendingResetCodeResult::Success(_) => String::from("Success"),
+            SendingResetCodeResult::DatabaseError(_) => String::from("DatabaseError"),
+            SendingResetCodeResult::UserDidNotHaveId => String::from("UserDidNotHaveId"),
+            SendingResetCodeResult::TooManyUsersWithSameEmail => {
+                String::from("TooManyUsersWithSameEmail")
+            }
+            SendingResetCodeResult::UserWithEmailNotFound => String::from("UserWithEmailNotFound"),
+        }
+    }
+}
+
+pub enum ResetingPasswordResult {
+    Success,
+    DatabaseError(String),
+    CodeInvalid,
+    CodeOnMoreThanOneUser,
+    CodeExpired,
+    DatetimeMissingOnUser,
+    RegexInitializationError,
+    PasswordInvalid,
+}
+
+impl ToString for ResetingPasswordResult {
+    fn to_string(&self) -> String {
+        match self {
+            ResetingPasswordResult::Success => String::from("Success"),
+            ResetingPasswordResult::DatabaseError(_) => String::from("DatabaseError"),
+            ResetingPasswordResult::CodeInvalid => String::from("CodeInvalid"),
+            ResetingPasswordResult::CodeOnMoreThanOneUser => String::from("CodeOnMoreThanOneUser"),
+            ResetingPasswordResult::CodeExpired => String::from("CodeExpired"),
+            ResetingPasswordResult::DatetimeMissingOnUser => String::from("DatetimeMissingOnUser"),
+            ResetingPasswordResult::RegexInitializationError => {
+                String::from("RegexInitializationError")
+            }
+            ResetingPasswordResult::PasswordInvalid => String::from("PasswordInvalid"),
+        }
+    }
+}
+
+#[derive(FromRow)]
+struct PasswordReset {
+    user: i32,
+    expiration_timestamp: NaiveDateTime,
+    code: String,
+}
+
+impl User {
+    // impl block for password reseting
+    pub async fn send_reset_code(email: String) -> SendingResetCodeResult {
+        let mut connection = match database::establish_connection_to_database().await {
+            Ok(database_url) => database_url,
+            Err(error) => {
+                return SendingResetCodeResult::DatabaseError(format!(
+                    "Error while fetching database URL from environment: {}",
+                    error
+                ))
+            }
+        };
+
+        let users: Vec<User> = match sqlx::query_as("SELECT id, username, password, email, datetime_of_creation FROM users WHERE email = $1")
+            .bind(&email)
+            .fetch_all(&mut connection)
+            .await
+            {
+                Ok(users) => users,
+                Err(error) => return SendingResetCodeResult::DatabaseError(format!("{}", error))
+            };
+
+        match users.len() {
+            0 => SendingResetCodeResult::UserWithEmailNotFound,
+            1 => {
+                match users[0].id {
+                    None => SendingResetCodeResult::UserDidNotHaveId,
+                    Some(id) => {
+                        let timestamp = Local::now().naive_local() + Duration::minutes(30);
+                        let code = generate_random_string(10);
+                        match sqlx::query("INSERT INTO password_resets(\"user\", expiration_timestamp, code) VALUES($1, $2, $3)")
+                            .bind(&id)
+                            .bind(&timestamp)
+                            .bind(&code)
+                            .execute(&mut connection)
+                            .await
+                            {
+                                Ok(_) => {
+                                    // Send email here
+                                    let _email = User::send_reset_email(&email, &code).await;
+                                    SendingResetCodeResult::Success(code)
+                                }
+                                Err(error) => SendingResetCodeResult::DatabaseError(format!("{}", error))
+                            }
+                    }
+                }
+            }
+            _other => SendingResetCodeResult::TooManyUsersWithSameEmail,
+        }
+    }
+
+    async fn send_reset_email(_email: &String, _code: &String) -> Result<(), String> {
+        Ok(())
+    }
+
+    pub async fn reset_password(code: String, password: String) -> ResetingPasswordResult {
+        match regex_checks::perform_regex_check(
+            r"^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$",
+            &password,
+        ) {
+            Ok(outcome) => match outcome {
+                true => (),
+                false => return ResetingPasswordResult::PasswordInvalid,
+            },
+            Err(_) => return ResetingPasswordResult::RegexInitializationError,
+        };
+
+        let mut connection = match database::establish_connection_to_database().await {
+            Ok(database_url) => database_url,
+            Err(error) => {
+                return ResetingPasswordResult::DatabaseError(format!(
+                    "Error while fetching database URL from environment: {}",
+                    error
+                ))
+            }
+        };
+
+        let password_resets: Vec<PasswordReset> =
+            match sqlx::query_as("SELECT * FROM password_resets WHERE code = $1")
+                .bind(&code)
+                .fetch_all(&mut connection)
+                .await
+            {
+                Ok(p_rs) => p_rs,
+                Err(error) => return ResetingPasswordResult::DatabaseError(format!("{}", error)),
+            };
+
+        let pasword_rest = match password_resets.len() {
+            1 => &password_resets[0],
+            0 => return ResetingPasswordResult::CodeInvalid,
+            _other => return ResetingPasswordResult::CodeOnMoreThanOneUser,
+        };
+
+        match pasword_rest.expiration_timestamp > Local::now().naive_local() {
+            true => {
+                let user: User = match sqlx::query_as("SELECT id, username, password, email, datetime_of_creation FROM users WHERE id = $1")
+                    .bind(&pasword_rest.user)
+                    .fetch_one(&mut connection)
+                    .await {
+                    Ok(user) => user,
+                    Err(error) => return ResetingPasswordResult::DatabaseError(format!("{}", error))
+                };
+
+                let datetime = match &user.datetime_of_creation {
+                    Some(datetime) => datetime.clone(),
+                    None => return ResetingPasswordResult::DatetimeMissingOnUser,
+                };
+
+                let hashed_password =
+                    User::salt_and_hash_string(&password, &CustomeTimeStamp(datetime));
+
+                match sqlx::query("UPDATE users SET password = $1 WHERE id = $2")
+                    .bind(&hashed_password)
+                    .bind(&pasword_rest.user)
+                    .execute(&mut connection)
+                    .await
+                {
+                    Ok(_) => ResetingPasswordResult::Success,
+                    Err(error) => ResetingPasswordResult::DatabaseError(format!("{}", error)),
+                }
+            }
+            false => ResetingPasswordResult::CodeExpired,
+        }
     }
 }

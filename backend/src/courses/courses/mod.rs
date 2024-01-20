@@ -334,12 +334,14 @@ impl NewCourse {
     ) -> Result<(), String> {
         match course_id {
             Some(course_id) => {
-                match sqlx::query("INSERT INTO admin_course(admin, course, date_added) VALUES ($1, $2, $3)")
-                    .bind(&admin_id)
-                    .bind(&course_id)
-                    .bind(&Local::now().naive_local())
-                    .execute(connection)
-                    .await
+                match sqlx::query(
+                    "INSERT INTO admin_course(admin, course, date_added) VALUES ($1, $2, $3)",
+                )
+                .bind(&admin_id)
+                .bind(&course_id)
+                .bind(&Local::now().naive_local())
+                .execute(connection)
+                .await
                 {
                     Ok(_) => Ok(()),
                     Err(error) => Err(format!("{}", error)),
@@ -641,15 +643,15 @@ impl ModifiedCourse {
 #[derive(Serialize)]
 pub struct CourseTemplate {
     course: Course,
-    categories: Vec<categories::CategoryTemplate>
+    categories: Vec<categories::CategoryTemplate>,
 }
 
-// Need to get all of the courses so admins can modify them 
+// Need to get all of the courses so admins can modify them
 pub enum GettingCoursesForModification {
     Success(Vec<CourseTemplate>),
     DatabaseError(String),
     InvalidSessionToken,
-    RequestNotMadeByAdmin
+    RequestNotMadeByAdmin,
 }
 
 impl ToString for GettingCoursesForModification {
@@ -657,17 +659,26 @@ impl ToString for GettingCoursesForModification {
         match self {
             GettingCoursesForModification::Success(_) => String::from("Success"),
             GettingCoursesForModification::DatabaseError(_) => String::from("DatabaseError"),
-            GettingCoursesForModification::InvalidSessionToken => String::from("InvalidSessionToken"),
-            GettingCoursesForModification::RequestNotMadeByAdmin => String::from("RequestNotMadeByAdmin")
+            GettingCoursesForModification::InvalidSessionToken => {
+                String::from("InvalidSessionToken")
+            }
+            GettingCoursesForModification::RequestNotMadeByAdmin => {
+                String::from("RequestNotMadeByAdmin")
+            }
         }
     }
 }
 
 impl CourseTemplate {
-    pub async fn get_courses_for_modification(program_id: i32, session_token: session_token::SessionToken) -> GettingCoursesForModification{
+    pub async fn get_courses_for_modification(
+        program_id: i32,
+        session_token: session_token::SessionToken,
+    ) -> GettingCoursesForModification {
         let mut connection = match database::establish_connection_to_database().await {
             Ok(database_url) => database_url,
-            Err(error) => return GettingCoursesForModification::DatabaseError(format!("{}", error)),
+            Err(error) => {
+                return GettingCoursesForModification::DatabaseError(format!("{}", error))
+            }
         };
 
         match session_token.validate_token(&mut connection).await {
@@ -698,11 +709,20 @@ impl CourseTemplate {
         let mut course_templates: Vec<CourseTemplate> = Vec::new();
         for course in courses {
             match course.id {
-                None => return GettingCoursesForModification::DatabaseError(String::from("Course did not have an ID")),
+                None => {
+                    return GettingCoursesForModification::DatabaseError(String::from(
+                        "Course did not have an ID",
+                    ))
+                }
                 Some(course_id) => {
-                    match categories::CategoryTemplate::get_categories(course_id, &mut connection).await {
-                        Ok(cats) => course_templates.push( CourseTemplate { course: course, categories: cats } ),
-                        Err(error) => return GettingCoursesForModification::DatabaseError(error)
+                    match categories::CategoryTemplate::get_categories(course_id, &mut connection)
+                        .await
+                    {
+                        Ok(cats) => course_templates.push(CourseTemplate {
+                            course: course,
+                            categories: cats,
+                        }),
+                        Err(error) => return GettingCoursesForModification::DatabaseError(error),
                     }
                 }
             }
