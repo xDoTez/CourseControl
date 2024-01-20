@@ -709,21 +709,76 @@ async fn get_courses_from_prog_id(
     })
 }
 
+#[derive(Deserialize)]
+struct SendingResetCodeStruct {
+    email: String,
+}
+
 #[derive(Serialize)]
 struct SendingResetCodeResult {
     status: String,
-    message: Option<String>
+    message: Option<String>,
+    code: Option<String>,
 }
 
-#[post(
-    "/send_reset_code",
-    format = "json",
-    data = "<send_reset_code_data>"
-)]
+#[post("/send_reset_code", format = "json", data = "<send_reset_code_data>")]
 async fn send_reset_code(
-    send_reset_code_data: Json<String>,
+    send_reset_code_data: Json<SendingResetCodeStruct>,
 ) -> Json<SendingResetCodeResult> {
-    todo!()
+    let send_reset_code_data = send_reset_code_data.into_inner();
+
+    let result = users::User::send_reset_code(send_reset_code_data.email).await;
+
+    Json(match &result {
+        users::SendingResetCodeResult::Success(code) => SendingResetCodeResult {
+            status: result.to_string(),
+            message: None,
+            code: Some(code.clone()),
+        },
+        users::SendingResetCodeResult::DatabaseError(error) => SendingResetCodeResult {
+            status: result.to_string(),
+            message: Some(error.clone()),
+            code: None,
+        },
+        other => SendingResetCodeResult {
+            status: other.to_string(),
+            message: None,
+            code: None,
+        },
+    })
+}
+
+#[derive(Deserialize)]
+struct ResettingPasswordStruct {
+    code: String,
+    password: String,
+}
+
+#[derive(Serialize)]
+struct ResstingPasswordResult {
+    status: String,
+    message: Option<String>,
+}
+
+#[post("/reset_password", format = "json", data = "<reset_password_data>")]
+async fn reset_password(
+    reset_password_data: Json<ResettingPasswordStruct>,
+) -> Json<ResstingPasswordResult> {
+    let reset_password_data = reset_password_data.into_inner();
+
+    let result =
+        users::User::reset_password(reset_password_data.code, reset_password_data.password).await;
+
+    Json(match &result {
+        users::ResetingPasswordResult::DatabaseError(error) => ResstingPasswordResult {
+            status: result.to_string(),
+            message: Some(error.clone()),
+        },
+        other => ResstingPasswordResult {
+            status: other.to_string(),
+            message: None,
+        },
+    })
 }
 
 #[launch]
@@ -737,14 +792,20 @@ fn rocket() -> _ {
                 register_user,
                 login_user,
                 add_course_to_user,
-                check_if_user_is_admin
+                check_if_user_is_admin,
+                send_reset_code,
+                reset_password
             ],
         )
         .mount("/something", routes![get_course_data, get_course_data_old])
         .mount("/programs", routes![get_all_programs])
         .mount(
             "/courses",
-            routes![get_all_addable_courses, toggle_user_course_activity, modify_existing_course_data],
+            routes![
+                get_all_addable_courses,
+                toggle_user_course_activity,
+                modify_existing_course_data
+            ],
         )
         .mount(
             "/admin",
