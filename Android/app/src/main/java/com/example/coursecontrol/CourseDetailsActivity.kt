@@ -38,6 +38,7 @@ class CourseDetailsActivity : AppCompatActivity() {
             val editCourseData = Intent(this, EditCourseDataActivity::class.java)
             editCourseData.putExtra("course_data", courseData)
             startActivity(editCourseData)
+            finish()
         }
     }
 

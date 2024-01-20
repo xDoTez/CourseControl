@@ -1,5 +1,6 @@
 package com.example.coursecontrol.EditCourseData
 
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
@@ -8,6 +9,7 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import com.example.coursecontrol.CourseDetailsActivity
 import com.example.coursecontrol.R
 import com.example.coursecontrol.SessionToken
 import com.example.coursecontrol.model.AddNewCourse
@@ -87,9 +89,10 @@ class EditCourseDataActivity : AppCompatActivity() {
                 }
             }
             val sessionToken = sessionManager.getSessionToken()
+            lateinit var request: EditCourseData
             if (sessionToken != null) {
                 if (courseData != null) {
-                    var request = getRequestModel(sessionToken, courseData, editTextCategoryList, editTextSubcategoryList)
+                    request = getRequestModel(sessionToken, courseData, editTextCategoryList, editTextSubcategoryList)
                     Log.d("request", request.toString())
 
                     val coroutineScope = CoroutineScope(Dispatchers.Default)
@@ -98,6 +101,9 @@ class EditCourseDataActivity : AppCompatActivity() {
                     }
                 }
             }
+            val intent = Intent(this, CourseDetailsActivity::class.java)
+            intent.putExtra("course_data", request.course_data)
+            startActivity(intent)
             finish()
         }
     }
