@@ -36,6 +36,7 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var tvRegister: TextView
     private lateinit var sessionManager: SessionManager
     lateinit var apiResponse: LoggedInUser
+    private lateinit var tvForgottenPassword: TextView
 
     var admin: Boolean = false
     val adminChecker = AdminChecker()
@@ -52,6 +53,12 @@ class LoginActivity : AppCompatActivity() {
 
         btnLogin.setOnClickListener {
             login(etUsername.text.toString(), etPassword.text.toString())
+        }
+
+        tvForgottenPassword = findViewById(R.id.tvForgottenPassword)
+        tvForgottenPassword.setOnClickListener {
+            val intent = Intent(this, ForgottenPasswordActivity::class.java)
+            startActivity(intent)
         }
 
         tvRegister.setOnClickListener {
