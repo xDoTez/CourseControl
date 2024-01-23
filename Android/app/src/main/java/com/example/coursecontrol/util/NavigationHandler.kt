@@ -1,5 +1,6 @@
 package com.example.coursecontrol.util
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.view.MenuItem
@@ -23,7 +24,9 @@ class NavigationHandler(private val context: Context) {
                 return true
             }
             R.id.back -> {
-                // Handle back item logic here
+                if (context is Activity) {
+                    context.onBackPressed()
+                }
                 return true
             }
             else -> return false
