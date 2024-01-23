@@ -1,26 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
+
     <item
-        android:id="@+id/profile"
+        android:id="@+id/back"
         android:enabled="true"
-        android:icon="@drawable/baseline_person_outline_24"
-        android:title="@string/profile"/>
+        android:icon="@drawable/back_button"
+        android:title="@string/back"/>
     <item
-        android:id="@+id/report"
+        android:id="@+id/home"
         android:enabled="true"
-        android:icon="@drawable/baseline_file_download_24"
-        android:title="@string/report"/>
-    <item
-        android:id="@+id/settings"
-        android:enabled="true"
-        android:icon="@drawable/baseline_settings_24"
-        android:title="@string/settings"/>
+        android:icon="@drawable/baseline_home_24"
+        android:title="@string/home"/>
     <item
         android:id="@+id/logout"
         android:enabled="true"
         android:icon="@drawable/baseline_logout_24"
         android:title="@string/logout"/>
-
 
 </menu>

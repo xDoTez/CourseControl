@@ -104,8 +104,12 @@ class LoginActivity : AppCompatActivity() {
 
     private fun handleSuccessfulLogin() {
         Toast.makeText(this@LoginActivity, "Login successful!", Toast.LENGTH_SHORT).show()
-        val courseDisplayActivity = Intent(this, CourseDisplayActivity::class.java)
-        startActivity(courseDisplayActivity)
+
+        val username = etUsername.text.toString()
+
+        val homeActivityIntent = Intent(this, HomeActivity::class.java)
+        homeActivityIntent.putExtra("USERNAME_EXTRA", username)
+        startActivity(homeActivityIntent)
 
         lifecycleScope.launch {
             try {
@@ -122,6 +126,7 @@ class LoginActivity : AppCompatActivity() {
             }
         }
     }
+
 
 
 }

@@ -12,6 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.coursecontrol.model.CourseData
+import com.example.coursecontrol.util.NavigationHandler
 import com.example.coursecontrol.util.SessionManager
 import com.example.coursecontrol.viewmodel.CourseViewModelHistory  // Updated import
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -42,25 +43,13 @@ class CourseDisplayHistoryActivity : AppCompatActivity() {
             }
             recyclerView.adapter = userDataAdapter
         })
-
         val bottomNavigationView: BottomNavigationView = findViewById(R.id.bottom_navigation)
+        val navigationHandler = NavigationHandler(this)
+
         bottomNavigationView.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.logout -> {
-                    Logout.logoutUser(this, Intent(this, MainActivity::class.java))
-                    true
-                }
-                R.id.report -> {
-                    val intent = Intent(this, GenerateReportManagerActivity::class.java)
-                    startActivity(intent)
-                    true
-                }
-                R.id.profile -> {
-                    true
-                }
-                else -> false
-            }
+            navigationHandler.handleItemSelected(item)
         }
+
 
         lifecycleScope.launch {
             try {
