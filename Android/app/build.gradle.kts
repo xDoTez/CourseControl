@@ -1,6 +1,9 @@
+import org.jetbrains.kotlin.com.intellij.openapi.vfs.StandardFileSystems.jar
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("io.github.manosbatsis.gradle.plugin.reflections") version "1.1"
 }
 
 android {
@@ -85,4 +88,6 @@ dependencies {
     implementation ("com.google.android.gms:play-services-auth:17.0.0")
 
     implementation ("com.google.code.gson:gson:2.8.8")
+
+    implementation("org.jetbrains.kotlin:kotlin-reflect:1.9.22")
 }

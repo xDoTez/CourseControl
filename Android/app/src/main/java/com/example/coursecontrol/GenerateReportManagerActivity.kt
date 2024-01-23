@@ -5,6 +5,7 @@ import android.Manifest.permission.WRITE_EXTERNAL_STORAGE
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.Toast
@@ -15,10 +16,13 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import com.example.coursecontrol.databinding.ActivityGenerateReportManagerBinding
-import com.example.coursecontrol.modules.GenerateReportPdf
 import com.example.coursecontrol.util.SessionManager
 import com.example.coursecontrol.viewmodel.CourseViewModel
+import dalvik.system.BaseDexClassLoader
+import dalvik.system.DexFile
 import kotlinx.coroutines.launch
+import java.io.IOException
+import java.lang.reflect.Field
 
 
 class GenerateReportManagerActivity : AppCompatActivity() {
@@ -26,6 +30,7 @@ class GenerateReportManagerActivity : AppCompatActivity() {
     private val viewModel: CourseViewModel by viewModels()
     private lateinit var sessionManager: SessionManager
     private var reportGenerators: ArrayList<GenerateReport> = ArrayList()
+    private lateinit var instance: GenerateReport
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,8 +55,74 @@ class GenerateReportManagerActivity : AppCompatActivity() {
         initializeReportGenerators()
     }
 
-    fun initializeReportGenerators(){
-        addReportGenerator(GenerateReportPdf())
+    private fun getClassesOfPackage(packageName: String): MutableList<String>? {
+        val classes = ArrayList<String>()
+        try {
+            val dexFiles = getDexFiles()
+            for(dexFile in dexFiles){
+                val iter = dexFile.entries()
+                while (iter.hasMoreElements()) {
+                    val className = iter.nextElement()
+                    if (className.contains(packageName)) {
+                        classes.add(
+                            className.substring(
+                                className.lastIndexOf(".") + 1,
+                                className.length
+                            )
+                        )
+                    }
+                }
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+        return classes
+    }
+
+    private fun getDexFiles(): List<DexFile> {
+        val classLoader = classLoader as BaseDexClassLoader
+
+        val pathListField = field("dalvik.system.BaseDexClassLoader", "pathList")
+        val pathList = pathListField.get(classLoader) // Type is DexPathList
+
+        val dexElementsField = field("dalvik.system.DexPathList", "dexElements")
+        @Suppress("UNCHECKED_CAST")
+        val dexElements = dexElementsField.get(pathList) as Array<Any> // Type is Array<DexPathList.Element>
+
+        val dexFileField = field("dalvik.system.DexPathList\$Element", "dexFile")
+        return dexElements.map {
+            dexFileField.get(it) as DexFile
+        }
+    }
+
+    private fun field(className: String, fieldName: String): Field {
+        val clazz = Class.forName(className)
+        val field = clazz.getDeclaredField(fieldName)
+        field.isAccessible = true
+        return field
+    }
+
+    private fun initializeReportGenerators(){
+        try {
+            var modulePath = "com.example.coursecontrol.modules."
+            val name = "modules"
+
+            var classNames = getClassesOfPackage(name)!!.toSet()
+            for(className in classNames!!){
+                if(className.contains("LiveLiterals")){
+                    continue
+                } else {
+                    Log.d("naziv modula", className)
+                    val fullName = modulePath + className
+                    val module = Class.forName(fullName)
+                    instance = module.newInstance() as GenerateReport
+                    addReportGenerator(instance)
+                }
+            }
+
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
     }
 
     private fun addReportGenerator(reportGenerator: GenerateReport) {
@@ -95,24 +166,6 @@ class GenerateReportManagerActivity : AppCompatActivity() {
 
         layout.addView(button)
     }
-
-    /*private fun setButtonListener(){
-        binding.ButtonTest.setOnClickListener {
-            if (checkPermission()) {
-                Toast.makeText(this, "Permission Granted", Toast.LENGTH_SHORT).show()
-            } else {
-                requestPermission()
-            }
-
-            val generateReportPdf = GenerateReportPdf.getInstance()
-            viewModel.courseDataLiveData.observe(this, Observer { courseDataList ->
-                generateReportPdf.setData(courseDataList)
-            })
-            generateReportPdf.generateReport()
-            Toast.makeText(this, "PDF report generated!", Toast.LENGTH_SHORT).show()
-            finish()
-        }
-    }*/
 
     private fun checkPermission(): Boolean{
         var permission1 = ContextCompat.checkSelfPermission(getApplicationContext(), WRITE_EXTERNAL_STORAGE)
