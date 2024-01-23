@@ -102,7 +102,7 @@ class GenerateReportPdf: GenerateReport {
 
 
     override fun getIcon(context: Context): Drawable {
-        return AppCompatResources.getDrawable(context, R.drawable.icon_reports_white)!!
+        return AppCompatResources.getDrawable(context, R.drawable.icon_pdf_report_white)!!
     }
 
     override fun getName(context: Context): String {
