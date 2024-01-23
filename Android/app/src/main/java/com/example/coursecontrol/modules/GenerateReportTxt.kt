@@ -51,7 +51,7 @@ class GenerateReportTxt: GenerateReport {
                 stringBuilder.append("   - Requirement: $requirement points\n")
 
 
-                for (subcategoryData in categoryData.subcategories) {
+                for (subcategoryData in categoryData.subcategories!!) {
                     val subcategory = subcategoryData.subcategory
                     stringBuilder.append("   - ${subcategory.name}: Points - ${subcategory.points}: Requirement - ${subcategory.requirements}\n")
 
