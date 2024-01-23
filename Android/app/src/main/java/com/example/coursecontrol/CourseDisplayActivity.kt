@@ -21,6 +21,7 @@ import com.example.coursecontrol.addNewCourse.ProgramDisplayActivity
 import com.example.coursecontrol.adminPrivileges.UserDisplayActivity
 import com.example.coursecontrol.databinding.ActivityMainBinding
 import com.example.coursecontrol.model.CourseData
+import com.example.coursecontrol.util.NavigationHandler
 import com.example.coursecontrol.util.SessionManager
 import com.example.coursecontrol.viewmodel.CourseViewModel
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -114,23 +115,6 @@ class CourseDisplayActivity : AppCompatActivity() {
         val recyclerView: RecyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
 
-        val historyButton: Button = findViewById(R.id.historyButton)
-        historyButton.setOnClickListener {
-            val historyIntent = Intent(this, CourseDisplayHistoryActivity::class.java)
-            startActivity(historyIntent)
-        }
-
-        val usersButton: Button = findViewById(R.id.btnUsers)
-        usersButton.setOnClickListener {
-            val usersIntent = Intent(this, UserDisplayActivity::class.java)
-            startActivity(usersIntent)
-        }
-
-        btnAddNewCourse = findViewById(R.id.btnAddNewCourse)
-        btnAddNewCourse.setOnClickListener {
-            val addNewCourseIntent = Intent(this, ProgramDisplayActivity::class.java)
-            startActivity(addNewCourseIntent)
-        }
 
         viewModel.courseDataLiveData.observe(this, Observer { courseDataList ->
             val userDataAdapter = UserDataAdapter(courseDataList) { selectedCourseData ->
@@ -140,22 +124,10 @@ class CourseDisplayActivity : AppCompatActivity() {
         })
 
         val bottomNavigationView: BottomNavigationView = findViewById(R.id.bottom_navigation)
+        val navigationHandler = NavigationHandler(this)
+
         bottomNavigationView.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.logout -> {
-                    Logout.logoutUser(this, Intent(this, MainActivity::class.java))
-                    true
-                }
-                R.id.report -> {
-                    val intent = Intent(this, GenerateReportManagerActivity::class.java)
-                    startActivity(intent)
-                    true
-                }
-                R.id.profile -> {
-                    true
-                }
-                else -> false
-            }
+            navigationHandler.handleItemSelected(item)
         }
 
         lifecycleScope.launch {
@@ -166,14 +138,7 @@ class CourseDisplayActivity : AppCompatActivity() {
                     viewModel.makeApiCall(sessionToken)
                 } else {
                 }
-                val usersButton: Button = findViewById(R.id.btnUsers)
                 val isAdmin = adminChecker.isAdmin()
-                if (isAdmin) {
-                    usersButton.visibility = View.VISIBLE
-                }
-                else{
-                    usersButton.visibility = View.GONE
-                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
