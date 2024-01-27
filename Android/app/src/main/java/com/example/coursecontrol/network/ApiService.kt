@@ -6,14 +6,13 @@ import com.example.coursecontrol.model.Admin
 import com.example.coursecontrol.model.ApiResponse
 import com.example.coursecontrol.model.ApiResponseAddNewCourse
 import com.example.coursecontrol.model.ApiResponseAdminPrivileges
+import com.example.coursecontrol.model.CreateNewCourse
 import com.example.coursecontrol.model.EditCourseData
 import com.example.coursecontrol.model.Email
 import com.example.coursecontrol.model.NewCourses
 import com.example.coursecontrol.model.ProgramNew
 import com.example.coursecontrol.model.ResetCode
 import com.example.coursecontrol.model.ResetPassword
-import com.google.gson.Gson
-import com.google.gson.annotations.SerializedName
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -92,4 +91,7 @@ interface ApiService {
 
     @POST("http://165.232.76.112:8000/users/reset_password")
     suspend fun resetPassword(@Body request: ResetPassword): AddNewCourse
+
+    @POST("http://165.232.76.112:8000/admin/add_new_course")
+    suspend fun createNewCourse(@Body request: CreateNewCourse): AddNewCourse
 }
