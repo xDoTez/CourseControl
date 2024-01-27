@@ -195,5 +195,3 @@ create table admin_course
 
 alter table admin_course
     owner to postgres;
-
-
