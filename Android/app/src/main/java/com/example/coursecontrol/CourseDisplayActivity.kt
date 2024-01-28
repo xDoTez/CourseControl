@@ -31,8 +31,6 @@ class CourseDisplayActivity : AppCompatActivity() {
     private val viewModel: CourseViewModel by viewModels()
     private lateinit var sessionManager: SessionManager
     val adminChecker = AdminChecker()
-    private lateinit var btnAddNewCourse: Button
-    private lateinit var btnUsers : Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

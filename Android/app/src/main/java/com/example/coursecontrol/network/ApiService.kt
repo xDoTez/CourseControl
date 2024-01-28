@@ -13,6 +13,11 @@ import com.example.coursecontrol.model.NewCourses
 import com.example.coursecontrol.model.ProgramNew
 import com.example.coursecontrol.model.ResetCode
 import com.example.coursecontrol.model.ResetPassword
+
+import com.example.coursecontrol.model.SetInactive
+import com.google.gson.Gson
+import com.google.gson.annotations.SerializedName
+
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -52,7 +57,8 @@ interface ApiService {
 
     @POST("http://165.232.76.112:8000/admin/add_new_program")
     suspend fun addNewProgram(@Body request: ProgramNew): ApiResponse
-
+    @POST("http://165.232.76.112:8000/courses/toggle_user_course_activity")
+    suspend fun setInactive(@Body request: SetInactive): ApiResponse
     @POST("http://165.232.76.112:8000/something/course_data?sorting_option=NameAlphabeticAsc")
     suspend fun sortNameAlphabeticAsc(@Body request: YourRequestModel): ApiResponse
 

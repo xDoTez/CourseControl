@@ -31,12 +31,6 @@ class CourseDisplayHistoryActivity : AppCompatActivity() {
 
         val recyclerView: RecyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
-        val activeButton: Button = findViewById(R.id.activeButton)
-
-        activeButton.setOnClickListener {
-            val historyIntent = Intent(this, CourseDisplayActivity::class.java)
-            startActivity(historyIntent)
-        }
         viewModel.courseDataLiveData.observe(this, Observer { courseDataList ->
             val userDataAdapter = UserDataAdapter(courseDataList) { selectedCourseData ->
                 onCourseItemSelected(selectedCourseData)
