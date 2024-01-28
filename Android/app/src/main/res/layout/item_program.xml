@@ -12,7 +12,7 @@
         android:textSize="20sp"
         android:textStyle="bold"
         android:padding="24dp"
-        android:background="@drawable/rounded_border"
+        android:background="@drawable/rounded_border_course_view"
         android:textColor="@android:color/black"/>
 
 </LinearLayout>
