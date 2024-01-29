@@ -41,16 +41,18 @@ class CourseDisplayActivity : AppCompatActivity() {
 
 
         val spinner = findViewById<Spinner>(R.id.spinner)
-        val sortOptions = listOf("Name ascending", "Name descending", "Semester ascending", "Semester descending")
-        val adapter = ArrayAdapter<String>(this, R.layout.sort_options, sortOptions)
+        val sortOptions = listOf("Sorting options", "Name ascending", "Name descending", "Semester ascending", "Semester descending")
+        val adapter = ArrayAdapter(this, R.layout.sort_options, sortOptions)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinner.setAdapter(adapter)
+        spinner.adapter = adapter
 
         spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener{
             override fun onItemSelected(parentView: AdapterView<*>?, selectedItemView: View?, position: Int, id: Long) {
                 val selectedItem = sortOptions[position]
 
-                if (selectedItem == "Name ascending") {
+                if (selectedItem == "Sorting options") {
+
+                } else if (selectedItem == "Name ascending") {
                     lifecycleScope.launch {
                         try {
                             val sessionToken = sessionManager.getSessionToken()
@@ -135,6 +137,7 @@ class CourseDisplayActivity : AppCompatActivity() {
                 val sessionToken = sessionManager.getSessionToken()
                 adminChecker.checkAdmin(sessionToken)
                 if (sessionToken != null) {
+                    viewModel.clearCourseData()
                     viewModel.makeApiCall(sessionToken)
                 } else {
                 }
