@@ -16,8 +16,10 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import com.example.coursecontrol.databinding.ActivityGenerateReportManagerBinding
+import com.example.coursecontrol.util.NavigationHandler
 import com.example.coursecontrol.util.SessionManager
 import com.example.coursecontrol.viewmodel.CourseViewModel
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import dalvik.system.BaseDexClassLoader
 import dalvik.system.DexFile
 import kotlinx.coroutines.launch
@@ -38,6 +40,13 @@ class GenerateReportManagerActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         sessionManager = SessionManager(this)
+
+        val bottomNavigationView: BottomNavigationView = findViewById(R.id.bottom_navigation)
+        val navigationHandler = NavigationHandler(this)
+
+        bottomNavigationView.setOnItemSelectedListener { item ->
+            navigationHandler.handleItemSelected(item)
+        }
 
         lifecycleScope.launch {
             try {
