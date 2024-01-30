@@ -1,8 +1,11 @@
 package com.example.coursecontrol.model
 
+import com.google.gson.annotations.SerializedName
+import java.io.Serializable
+
 data class Course(
-    val id: Int,
-    val name: String,
-    val semester: Int,
-    val ects: Int
-)
+    @SerializedName("id")val id: Int,
+    @SerializedName("name")val name: String,
+    @SerializedName("semester")val semester: Int,
+    @SerializedName("ects")val ects: Int
+): Serializable

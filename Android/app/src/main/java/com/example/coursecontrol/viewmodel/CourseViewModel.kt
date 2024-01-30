@@ -18,7 +18,9 @@ class CourseViewModel : ViewModel() {
     private val _courseDataLiveData = MutableLiveData<List<CourseData>>()
     val courseDataLiveData: LiveData<List<CourseData>>
         get() = _courseDataLiveData
-
+    private val _selectedCourseLiveData = MutableLiveData<CourseData>()
+    val selectedCourseLiveData: LiveData<CourseData>
+        get() = _selectedCourseLiveData
     suspend fun makeApiCall(sessionToken: SessionToken) {
         Log.d("SessionToken", "Expiration: ${sessionToken.expiration}")
         Log.d("SessionToken", "Token: ${sessionToken.session_token}")
@@ -48,6 +50,121 @@ class CourseViewModel : ViewModel() {
     }
 
 
+    suspend fun makeApiCallForSortingAlphAsc(sessionToken: SessionToken) {
+        Log.d("SessionToken", "Expiration: ${sessionToken.expiration}")
+        Log.d("SessionToken", "Token: ${sessionToken.session_token}")
+        Log.d("SessionToken", "User: ${sessionToken.user}")
+        if (sessionToken.session_token != null && sessionToken.expiration != null) {
+            val requestModel = YourRequestModel(
+                user = sessionToken.user,
+                session_token = sessionToken.session_token,
+                expiration = sessionToken.expiration
+            )
+
+            Log.d("CourseViewModel", "Request Body: $requestModel")
+
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    RetrofitInstance.apiService.sortNameAlphabeticAsc(requestModel)
+                }
+
+                handleApiResponse(response)
+
+            } catch (e: Exception) {
+                handleApiError(e)
+            }
+        } else {
+            Log.e("CourseViewModel", "Invalid SessionToken: $sessionToken")
+        }
+    }
+
+    suspend fun makeApiCallForSortingAlphDesc(sessionToken: SessionToken) {
+        Log.d("SessionToken", "Expiration: ${sessionToken.expiration}")
+        Log.d("SessionToken", "Token: ${sessionToken.session_token}")
+        Log.d("SessionToken", "User: ${sessionToken.user}")
+        if (sessionToken.session_token != null && sessionToken.expiration != null) {
+            val requestModel = YourRequestModel(
+                user = sessionToken.user,
+                session_token = sessionToken.session_token,
+                expiration = sessionToken.expiration
+            )
+
+            Log.d("CourseViewModel", "Request Body: $requestModel")
+
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    RetrofitInstance.apiService.sortNameAlphabeticDesc(requestModel)
+                }
+
+                handleApiResponse(response)
+
+            } catch (e: Exception) {
+                handleApiError(e)
+            }
+        } else {
+            Log.e("CourseViewModel", "Invalid SessionToken: $sessionToken")
+        }
+    }
+
+    suspend fun makeApiCallForSortingSemAsc(sessionToken: SessionToken) {
+        Log.d("SessionToken", "Expiration: ${sessionToken.expiration}")
+        Log.d("SessionToken", "Token: ${sessionToken.session_token}")
+        Log.d("SessionToken", "User: ${sessionToken.user}")
+        if (sessionToken.session_token != null && sessionToken.expiration != null) {
+            val requestModel = YourRequestModel(
+                user = sessionToken.user,
+                session_token = sessionToken.session_token,
+                expiration = sessionToken.expiration
+            )
+
+            Log.d("CourseViewModel", "Request Body: $requestModel")
+
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    RetrofitInstance.apiService.sortSemesterAsc(requestModel)
+                }
+
+                handleApiResponse(response)
+
+            } catch (e: Exception) {
+                handleApiError(e)
+            }
+        } else {
+            Log.e("CourseViewModel", "Invalid SessionToken: $sessionToken")
+        }
+    }
+
+    suspend fun makeApiCallForSortingSemDesc(sessionToken: SessionToken) {
+        Log.d("SessionToken", "Expiration: ${sessionToken.expiration}")
+        Log.d("SessionToken", "Token: ${sessionToken.session_token}")
+        Log.d("SessionToken", "User: ${sessionToken.user}")
+        if (sessionToken.session_token != null && sessionToken.expiration != null) {
+            val requestModel = YourRequestModel(
+                user = sessionToken.user,
+                session_token = sessionToken.session_token,
+                expiration = sessionToken.expiration
+            )
+
+            Log.d("CourseViewModel", "Request Body: $requestModel")
+
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    RetrofitInstance.apiService.sortSemesterDesc(requestModel)
+                }
+
+                handleApiResponse(response)
+
+            } catch (e: Exception) {
+                handleApiError(e)
+            }
+        } else {
+            Log.e("CourseViewModel", "Invalid SessionToken: $sessionToken")
+        }
+    }
+
+
+
+
     private fun handleApiResponse(response: ApiResponse) {
         if (response.status == "Success") {
             val newData = response.data
@@ -60,6 +177,14 @@ class CourseViewModel : ViewModel() {
 
     private fun handleApiError(exception: Exception) {
         Log.e("CourseViewModel", "API call failed", exception)
+    }
+
+    fun selectCourse(courseData: CourseData) {
+        _selectedCourseLiveData.value = courseData
+    }
+
+    fun clearCourseData() {
+        _courseDataLiveData.value = emptyList()
     }
 }
 

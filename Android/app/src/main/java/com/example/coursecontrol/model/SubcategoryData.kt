@@ -1,6 +1,9 @@
 package com.example.coursecontrol.model
 
+import com.google.gson.annotations.SerializedName
+import java.io.Serializable
+
 data class SubcategoryData(
-    val subcategory: Subcategory,
-    val subcategoryUserData: SubcategoryUserData
-)
+    @SerializedName("subcategory")val subcategory: Subcategory,
+    @SerializedName("subcategory_user_data")val subcategoryUserData: SubcategoryUserData
+): Serializable

@@ -1,6 +1,7 @@
 package com.example.coursecontrol
 
 
+import AdminChecker
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -8,11 +9,19 @@ import android.util.Log
 
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 
 import android.widget.Toast
+import androidx.lifecycle.lifecycleScope
 import com.example.coursecontrol.R.*
+import com.example.coursecontrol.model.Admin
+import com.example.coursecontrol.network.NewCoursesModel
+import com.example.coursecontrol.network.YourRequestModel
 import com.example.coursecontrol.util.SessionManager
 import com.google.gson.Gson
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Callback
@@ -24,8 +33,13 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var etUsername: EditText
     private lateinit var etPassword: EditText
     private lateinit var btnLogin: Button
+    private lateinit var tvRegister: TextView
     private lateinit var sessionManager: SessionManager
     lateinit var apiResponse: LoggedInUser
+    private lateinit var tvForgottenPassword: TextView
+
+    var admin: Boolean = false
+    val adminChecker = AdminChecker()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,9 +48,22 @@ class LoginActivity : AppCompatActivity() {
         etUsername = findViewById(R.id.etUsername)
         etPassword = findViewById(R.id.etPassword)
         btnLogin = findViewById(R.id.btnLogin)
+        tvRegister = findViewById(R.id.tvRegister)
         sessionManager = SessionManager(this)
+
         btnLogin.setOnClickListener {
             login(etUsername.text.toString(), etPassword.text.toString())
+        }
+
+        tvForgottenPassword = findViewById(R.id.tvForgottenPassword)
+        tvForgottenPassword.setOnClickListener {
+            val intent = Intent(this, ForgottenPasswordActivity::class.java)
+            startActivity(intent)
+        }
+
+        tvRegister.setOnClickListener {
+            val registerActivity = Intent(this, RegistrationActivity::class.java)
+            startActivity(registerActivity)
         }
     }
 
@@ -77,7 +104,29 @@ class LoginActivity : AppCompatActivity() {
 
     private fun handleSuccessfulLogin() {
         Toast.makeText(this@LoginActivity, "Login successful!", Toast.LENGTH_SHORT).show()
-        val beginningActivity = Intent(this, BeginningActivity::class.java)
-        startActivity(beginningActivity);
+
+        val username = etUsername.text.toString()
+
+        val homeActivityIntent = Intent(this, HomeActivity::class.java)
+        homeActivityIntent.putExtra("USERNAME_EXTRA", username)
+        startActivity(homeActivityIntent)
+
+        lifecycleScope.launch {
+            try {
+                val sessionToken = sessionManager.getSessionToken()
+                if (sessionToken != null) {
+                    adminChecker.checkAdmin(sessionToken)
+                    val isAdmin = adminChecker.isAdmin()
+                    Log.d("AdminChecker", "API call successful. Status: $isAdmin")
+                } else {
+                    // Handle the case when sessionToken is null
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
+
+
+
 }

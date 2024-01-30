@@ -168,6 +168,7 @@ create table category_subcategories
 alter table category_subcategories
     owner to postgres;
 
+
 create table admins
 (
     id         serial
@@ -195,5 +196,4 @@ create table admin_course
 
 alter table admin_course
     owner to postgres;
-
 
