@@ -60,7 +60,7 @@ class CourseDisplayHistoryActivity : AppCompatActivity() {
     }
 
     private fun onCourseItemSelected(courseData: CourseData) {
-        val intent = Intent(this, CourseDetailsActivity::class.java)
+        val intent = Intent(this, CourseDetailsHistoryActivity::class.java)
         intent.putExtra("course_data", courseData)
         startActivity(intent)
     }

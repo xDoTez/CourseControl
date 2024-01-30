@@ -31,7 +31,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 
-class CourseDetailsActivity : AppCompatActivity() {
+class CourseDetailsHistoryActivity : AppCompatActivity() {
     private lateinit var btnEditCourseData: ImageButton
     private lateinit var btnSetCourseInactive: Button
     private lateinit var recyclerViewCategories: RecyclerView
@@ -40,7 +40,7 @@ class CourseDetailsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.detailed_course_view)
+        setContentView(R.layout.detailed_course_view_history)
         sessionManager = SessionManager(this)
         val courseData: CourseData? = intent.getSerializableExtra("course_data") as? CourseData
         if (courseData != null) {
