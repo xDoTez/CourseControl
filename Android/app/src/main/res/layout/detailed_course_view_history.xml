@@ -73,7 +73,7 @@
                         android:textColor="@color/white"
                         android:layout_weight="1"
                         android:background="@drawable/rounded_border_course_view"
-                        android:text="Set Inactive" />
+                        android:text="Set Active" />
                 </LinearLayout>
             </LinearLayout>
         </RelativeLayout>
