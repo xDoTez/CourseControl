@@ -10,9 +10,11 @@ import com.example.coursecontrol.R
 import com.example.coursecontrol.model.User
 
 class UserAdapter(
-    private val userDataList: List<User>,
+    private var userDataList: List<User>,
     private val onItemClick: (User) -> Unit
 ) : RecyclerView.Adapter<UserAdapter.ViewHolder>() {
+
+    private var filteredData: List<User> = userDataList
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view =
@@ -21,12 +23,12 @@ class UserAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val userData = userDataList[position]
+        val userData = filteredData[position]
         holder.bind(userData)
     }
 
     override fun getItemCount(): Int {
-        return userDataList.size
+        return filteredData.size
     }
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -41,5 +43,16 @@ class UserAdapter(
 
             Log.d("UserAdapter", "User bound: $user")
         }
+    }
+
+    fun filter(text: String) {
+        filteredData = if (text.isEmpty()) {
+            userDataList
+        } else {
+            userDataList.filter { user ->
+                user.username.contains(text, ignoreCase = true)
+            }
+        }
+        notifyDataSetChanged()
     }
 }

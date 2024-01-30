@@ -90,4 +90,5 @@ dependencies {
     implementation ("com.google.code.gson:gson:2.8.8")
 
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.9.22")
+    implementation ("androidx.cardview:cardview:1.0.0")
 }
