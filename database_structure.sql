@@ -168,3 +168,32 @@ create table category_subcategories
 alter table category_subcategories
     owner to postgres;
 
+
+create table admins
+(
+    id         serial
+        constraint admins_pk
+            primary key,
+    user_id    integer   not null
+        constraint admins_users_id_fk
+            references users,
+    time_added timestamp not null
+);
+
+alter table admins
+    owner to postgres;
+
+create table admin_course
+(
+    admin      integer   not null
+        constraint admin_course_admins_id_fk
+            references admins,
+    course     integer   not null
+        constraint admin_course_courses_id_fk
+            references courses,
+    date_added timestamp not null
+);
+
+alter table admin_course
+    owner to postgres;
+
