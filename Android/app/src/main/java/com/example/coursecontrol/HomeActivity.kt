@@ -40,7 +40,6 @@ class HomeActivity : AppCompatActivity() {
 
         val coursesImageView: ImageView = findViewById(R.id.courses)
         val reportsImageView: ImageView = findViewById(R.id.report)
-        val statsImageView: ImageView = findViewById(R.id.user16)
         val usersImageView: ImageView = findViewById(R.id.users)
 
         coursesImageView.setOnClickListener {
@@ -51,9 +50,6 @@ class HomeActivity : AppCompatActivity() {
         reportsImageView.setOnClickListener {
             val intent = Intent(this, GenerateReportManagerActivity::class.java)
             startActivity(intent)
-        }
-
-        statsImageView.setOnClickListener {
         }
 
         lifecycleScope.launch {

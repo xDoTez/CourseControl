@@ -65,51 +65,40 @@
             android:id="@+id/courses"
             android:layout_width="169dp"
             android:layout_height="172dp"
-            android:layout_marginEnd="32dp"
-            android:layout_marginBottom="52dp"
-            android:src="@drawable/courses_icon_white"
+            android:layout_marginStart="16dp"
             android:background="@drawable/rounded_border"
-            app:layout_constraintBottom_toTopOf="@+id/report"
-            app:layout_constraintEnd_toStartOf="@+id/user16"
-            app:layout_constraintHorizontal_bias="0.68"
+            android:src="@drawable/courses_icon_white"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/report"
+            app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="1.0" />
+            app:layout_constraintVertical_bias="0.059" />
 
         <ImageView
             android:id="@+id/report"
             android:layout_width="169dp"
             android:layout_height="172dp"
-            android:layout_marginEnd="40dp"
-            android:layout_marginBottom="96dp"
+            android:layout_marginEnd="16dp"
             android:background="@drawable/rounded_border"
             android:src="@drawable/icon_reports_white"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/users"
-            app:layout_constraintHorizontal_bias="0.941"
-            app:layout_constraintStart_toStartOf="parent" />
-
-        <ImageView
-            android:id="@+id/user16"
-            android:layout_width="169dp"
-            android:layout_height="172dp"
-            android:layout_marginEnd="16dp"
-            android:layout_marginBottom="52dp"
-            android:background="@drawable/rounded_border"
-            android:src="@drawable/icon_stats_white"
-            app:layout_constraintBottom_toTopOf="@+id/users"
-            app:layout_constraintEnd_toEndOf="parent" />
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.059" />
 
         <ImageView
             android:id="@+id/users"
             android:layout_width="169dp"
             android:layout_height="172dp"
-            android:layout_marginEnd="16dp"
-            android:layout_marginBottom="96dp"
             android:background="@drawable/rounded_border"
             android:src="@drawable/icon_users_white"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.808"
             tools:visibility="visible" />
 
         <com.google.android.material.bottomnavigation.BottomNavigationView
@@ -119,8 +108,8 @@
             app:itemIconTint="@color/white"
             app:itemTextColor="@color/white"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:menu="@menu/fragment_navbar" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
