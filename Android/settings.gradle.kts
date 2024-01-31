@@ -15,3 +15,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "CourseControl"
 include(":app")
+include(":report")
+include(":core")

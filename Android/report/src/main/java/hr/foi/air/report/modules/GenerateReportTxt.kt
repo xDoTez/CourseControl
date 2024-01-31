@@ -1,10 +1,9 @@
-package com.example.coursecontrol.modules
+package hr.foi.air.report.modules
 
 import android.content.Context
 import android.graphics.drawable.Drawable
 import android.os.Environment
 import androidx.appcompat.content.res.AppCompatResources
-import com.example.coursecontrol.GenerateReport
 import com.example.coursecontrol.R
 import com.example.coursecontrol.model.CategoryData
 import com.example.coursecontrol.model.CourseData

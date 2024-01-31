@@ -1,4 +1,4 @@
-package com.example.coursecontrol.modules
+package hr.foi.air.report.modules
 
 import android.content.Context
 import android.graphics.Color
@@ -8,14 +8,13 @@ import android.graphics.pdf.PdfDocument
 import android.os.Environment
 import android.util.Log
 import androidx.appcompat.content.res.AppCompatResources
-import com.example.coursecontrol.GenerateReport
 import com.example.coursecontrol.R
 import com.example.coursecontrol.model.CategoryData
 import com.example.coursecontrol.model.CourseData
 import java.io.File
 
 
-class GenerateReportPdf: GenerateReport {
+class GenerateReportPdf: hr.foi.air.core.GenerateReport {
 
     private var courseDataList = mutableListOf<CourseData>()
 

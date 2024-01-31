@@ -22,6 +22,7 @@ import com.example.coursecontrol.viewmodel.CourseViewModel
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import dalvik.system.BaseDexClassLoader
 import dalvik.system.DexFile
+import hr.foi.air.core.GenerateReport
 import kotlinx.coroutines.launch
 import java.io.IOException
 import java.lang.reflect.Field
