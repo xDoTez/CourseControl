@@ -1,17 +1,14 @@
-package com.example.coursecontrol.modules
+package hr.foi.air.report.modules
 
 import android.content.Context
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.drawable.Drawable
 import android.graphics.pdf.PdfDocument
 import android.os.Environment
 import android.util.Log
-import androidx.appcompat.content.res.AppCompatResources
-import com.example.coursecontrol.GenerateReport
-import com.example.coursecontrol.R
-import com.example.coursecontrol.model.CategoryData
-import com.example.coursecontrol.model.CourseData
+import hr.foi.air.core.GenerateReport
+import hr.foi.air.core.model.CategoryData
+import hr.foi.air.core.model.CourseData
 import java.io.File
 
 
@@ -101,12 +98,8 @@ class GenerateReportPdf: GenerateReport {
 
 
 
-    override fun getIcon(context: Context): Drawable {
-        return AppCompatResources.getDrawable(context, R.drawable.icon_pdf_report_white)!!
-    }
-
     override fun getName(context: Context): String {
-        return context.getString(R.string.generate_pdf)
+        return "generate pdf"
     }
 
     override fun setData(courseDataList: List<CourseData>) {

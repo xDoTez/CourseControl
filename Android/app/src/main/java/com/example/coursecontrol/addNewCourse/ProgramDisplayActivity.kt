@@ -1,12 +1,10 @@
 package com.example.coursecontrol.addNewCourse
 
 import AdminChecker
-import UserDataAdapter
 import android.app.AlertDialog
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
@@ -15,17 +13,11 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.coursecontrol.CourseDetailsActivity
-import com.example.coursecontrol.GenerateReportManagerActivity
-import com.example.coursecontrol.Logout
-import com.example.coursecontrol.MainActivity
 import com.example.coursecontrol.R
-import com.example.coursecontrol.model.CourseData
 import com.example.coursecontrol.model.Program
 import com.example.coursecontrol.util.NavigationHandler
 import com.example.coursecontrol.util.SessionManager
 import com.example.coursecontrol.viewmodel.CourseAddNewProgram
-import com.example.coursecontrol.viewmodel.CourseViewModelHistory
 import com.example.coursecontrol.viewmodel.ProgramViewModel
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.coroutines.Dispatchers

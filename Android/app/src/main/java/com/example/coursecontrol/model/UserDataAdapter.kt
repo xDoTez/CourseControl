@@ -6,8 +6,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.coursecontrol.R
-import com.example.coursecontrol.model.Course
-import com.example.coursecontrol.model.CourseData
+import hr.foi.air.core.model.CourseData
 
 class UserDataAdapter(
     private val courseDataList: List<CourseData>,

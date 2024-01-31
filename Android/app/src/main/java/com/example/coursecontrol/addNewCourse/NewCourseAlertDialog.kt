@@ -5,10 +5,10 @@ import android.util.Log
 import androidx.appcompat.app.AlertDialog
 import com.example.coursecontrol.SessionToken
 import com.example.coursecontrol.model.AddNewCourse
-import com.example.coursecontrol.model.Course
 import com.example.coursecontrol.network.AddNewCourseModel
 import com.example.coursecontrol.network.YourRequestModel
 import com.example.coursecontrol.util.RetrofitInstance
+import hr.foi.air.core.model.Course
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

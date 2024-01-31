@@ -7,9 +7,9 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.coursecontrol.SessionToken
 import com.example.coursecontrol.model.ApiResponse
-import com.example.coursecontrol.model.CourseData
 import com.example.coursecontrol.network.YourRequestModel
 import com.example.coursecontrol.util.RetrofitInstance
+import hr.foi.air.core.model.CourseData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

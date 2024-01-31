@@ -6,7 +6,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.coursecontrol.R
-import com.example.coursecontrol.model.Course
+import hr.foi.air.core.model.Course
 
 class NewCourseAdapter (
     private val courseDataList: List<Course>,

@@ -2,7 +2,6 @@ package com.example.coursecontrol
 
 import CategoryAdapter
 import android.app.AlertDialog
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -17,15 +16,15 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.coursecontrol.EditCourseData.EditCourseDataActivity
 
 import com.example.coursecontrol.model.ApiResponse
-import com.example.coursecontrol.model.CategoryData
-import com.example.coursecontrol.model.CourseData
-import com.example.coursecontrol.model.CourseUserData
 import com.example.coursecontrol.model.SetInactive
 import com.example.coursecontrol.network.YourRequestModel
 import com.example.coursecontrol.util.NavigationHandler
 import com.example.coursecontrol.util.RetrofitInstance
 import com.example.coursecontrol.util.SessionManager
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import hr.foi.air.core.model.CategoryData
+import hr.foi.air.core.model.CourseData
+import hr.foi.air.core.model.CourseUserData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
