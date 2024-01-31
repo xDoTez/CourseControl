@@ -5,8 +5,9 @@ import android.graphics.drawable.Drawable
 import android.os.Environment
 import androidx.appcompat.content.res.AppCompatResources
 import com.example.coursecontrol.R
-import com.example.coursecontrol.model.CategoryData
-import com.example.coursecontrol.model.CourseData
+import hr.foi.air.core.GenerateReport
+import hr.foi.air.core.model.CategoryData
+import hr.foi.air.core.model.CourseData
 import java.io.File
 import java.io.FileWriter
 

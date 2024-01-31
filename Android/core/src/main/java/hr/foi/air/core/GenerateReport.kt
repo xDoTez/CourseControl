@@ -2,7 +2,7 @@ package hr.foi.air.core
 
 import android.content.Context
 import android.graphics.drawable.Drawable
-import com.example.coursecontrol.model.CourseData
+import hr.foi.air.core.model.CourseData
 
 interface GenerateReport {
     fun generateReport()
