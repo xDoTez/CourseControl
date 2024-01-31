@@ -22,6 +22,9 @@ import com.example.coursecontrol.viewmodel.CourseViewModel
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import dalvik.system.BaseDexClassLoader
 import dalvik.system.DexFile
+import hr.foi.air.core.model.CourseData
+import hr.foi.air.report.modules.GenerateReportPdf
+import hr.foi.air.report.modules.GenerateReportTxt
 import kotlinx.coroutines.launch
 import java.io.IOException
 import java.lang.reflect.Field
@@ -31,8 +34,8 @@ class GenerateReportManagerActivity : AppCompatActivity() {
     private lateinit var binding: ActivityGenerateReportManagerBinding
     private val viewModel: CourseViewModel by viewModels()
     private lateinit var sessionManager: SessionManager
-    private var reportGenerators: ArrayList<GenerateReport> = ArrayList()
-    private lateinit var instance: GenerateReport
+    private var reportGenerators: ArrayList<hr.foi.air.core.GenerateReport> = ArrayList()
+    private lateinit var instance: hr.foi.air.core.GenerateReport
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -112,7 +115,7 @@ class GenerateReportManagerActivity : AppCompatActivity() {
     }
 
     private fun initializeReportGenerators(){
-        try {
+        /*try {
             var modulePath = "com.example.coursecontrol.modules."
             val name = "modules"
 
@@ -124,26 +127,28 @@ class GenerateReportManagerActivity : AppCompatActivity() {
                     Log.d("naziv modula", className)
                     val fullName = modulePath + className
                     val module = Class.forName(fullName)
-                    instance = module.newInstance() as GenerateReport
+                    instance = module.newInstance() as hr.foi.air.core.GenerateReport
                     addReportGenerator(instance)
                 }
             }
 
         } catch (e: IOException) {
             e.printStackTrace()
-        }
+        }*/
+
+        addReportGenerator(GenerateReportPdf())
+        addReportGenerator(GenerateReportTxt())
     }
 
-    private fun addReportGenerator(reportGenerator: GenerateReport) {
+    private fun addReportGenerator(reportGenerator: hr.foi.air.core.GenerateReport) {
         reportGenerators.add(reportGenerator)
         addGeneratorToMenu(reportGenerator)
     }
 
-    private fun addGeneratorToMenu(reportGenerator: GenerateReport) {
+    private fun addGeneratorToMenu(reportGenerator: hr.foi.air.core.GenerateReport) {
         var layout = binding.ModularLayout
         var button = Button(this)
         button.setText(reportGenerator.getName(this))
-        button.setCompoundDrawablesWithIntrinsicBounds(reportGenerator.getIcon(this), null, null, null)
 
         var params = LinearLayout.LayoutParams(resources.getDimension(R.dimen.button_width).toInt(),
             LinearLayout.LayoutParams.WRAP_CONTENT)
@@ -166,7 +171,7 @@ class GenerateReportManagerActivity : AppCompatActivity() {
             }
 
             viewModel.courseDataLiveData.observe(this, Observer { courseDataList ->
-                reportGenerator.setData(courseDataList)
+                reportGenerator.setData(courseDataList as List<CourseData>)
             })
             reportGenerator.generateReport()
             Toast.makeText(this, "Report generated in Downloads", Toast.LENGTH_SHORT).show()

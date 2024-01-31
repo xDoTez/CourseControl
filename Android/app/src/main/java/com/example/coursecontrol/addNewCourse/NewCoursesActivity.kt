@@ -12,19 +12,14 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.coursecontrol.AdminCreateNewCourseActivity
-import com.example.coursecontrol.CourseDetailsActivity
-import com.example.coursecontrol.GenerateReportManagerActivity
-import com.example.coursecontrol.Logout
-import com.example.coursecontrol.MainActivity
 import com.example.coursecontrol.R
-import com.example.coursecontrol.model.Course
-import com.example.coursecontrol.model.CourseData
 import com.example.coursecontrol.model.Program
 import com.example.coursecontrol.util.NavigationHandler
 import com.example.coursecontrol.util.NewCourseTempSaver
 import com.example.coursecontrol.util.SessionManager
 import com.example.coursecontrol.viewmodel.NewCourseViewModel
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import hr.foi.air.core.model.Course
 import kotlinx.coroutines.launch
 
 class NewCoursesActivity : AppCompatActivity() {

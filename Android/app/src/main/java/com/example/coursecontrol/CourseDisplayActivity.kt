@@ -4,12 +4,9 @@ import AdminChecker
 import UserDataAdapter
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
-import android.widget.AutoCompleteTextView
-import android.widget.Button
 import android.widget.Spinner
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -17,14 +14,11 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.coursecontrol.addNewCourse.ProgramDisplayActivity
-import com.example.coursecontrol.adminPrivileges.UserDisplayActivity
-import com.example.coursecontrol.databinding.ActivityMainBinding
-import com.example.coursecontrol.model.CourseData
 import com.example.coursecontrol.util.NavigationHandler
 import com.example.coursecontrol.util.SessionManager
 import com.example.coursecontrol.viewmodel.CourseViewModel
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import hr.foi.air.core.model.CourseData
 import kotlinx.coroutines.launch
 
 class CourseDisplayActivity : AppCompatActivity() {

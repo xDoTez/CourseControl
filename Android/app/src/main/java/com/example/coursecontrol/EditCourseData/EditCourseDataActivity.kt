@@ -13,17 +13,17 @@ import com.example.coursecontrol.CourseDetailsActivity
 import com.example.coursecontrol.R
 import com.example.coursecontrol.SessionToken
 import com.example.coursecontrol.model.AddNewCourse
-import com.example.coursecontrol.model.Category
-import com.example.coursecontrol.model.CategoryData
-import com.example.coursecontrol.model.CategoryUserData
-import com.example.coursecontrol.model.CourseData
 import com.example.coursecontrol.model.EditCourseData
-import com.example.coursecontrol.model.Subcategory
-import com.example.coursecontrol.model.SubcategoryData
-import com.example.coursecontrol.model.SubcategoryUserData
 import com.example.coursecontrol.network.YourRequestModel
 import com.example.coursecontrol.util.RetrofitInstance
 import com.example.coursecontrol.util.SessionManager
+import hr.foi.air.core.model.Category
+import hr.foi.air.core.model.CategoryData
+import hr.foi.air.core.model.CategoryUserData
+import hr.foi.air.core.model.CourseData
+import hr.foi.air.core.model.Subcategory
+import hr.foi.air.core.model.SubcategoryData
+import hr.foi.air.core.model.SubcategoryUserData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -73,7 +73,7 @@ class EditCourseDataActivity : AppCompatActivity() {
                     for (category in editTextCategoryList) {
                         if (item.category.id == category.id && item.subcategories?.isEmpty() == false) {
                             var points = 0
-                            for (subcategory in item.subcategories) {
+                            for (subcategory in item.subcategories!!) {
                                 for (sub in editTextSubcategoryList) {
                                     if (subcategory.subcategory.id == sub.id) {
                                         points += sub.text.toString().toInt()

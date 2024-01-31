@@ -4,18 +4,17 @@ import UserDataAdapter
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import android.widget.Button
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.coursecontrol.model.CourseData
 import com.example.coursecontrol.util.NavigationHandler
 import com.example.coursecontrol.util.SessionManager
 import com.example.coursecontrol.viewmodel.CourseViewModelHistory  // Updated import
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import hr.foi.air.core.model.CourseData
 import kotlinx.coroutines.launch
 
 class CourseDisplayHistoryActivity : AppCompatActivity() {

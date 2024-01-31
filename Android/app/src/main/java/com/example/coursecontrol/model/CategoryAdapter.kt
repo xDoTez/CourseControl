@@ -4,7 +4,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.coursecontrol.R
-import com.example.coursecontrol.model.CategoryData
+import hr.foi.air.core.model.CategoryData
 
 class CategoryAdapter(private val categories: List<CategoryData>) :
     RecyclerView.Adapter<CategoryAdapter.CategoryViewHolder>() {

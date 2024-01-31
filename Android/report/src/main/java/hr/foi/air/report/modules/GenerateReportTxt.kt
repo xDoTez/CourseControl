@@ -1,13 +1,10 @@
-package com.example.coursecontrol.modules
+package hr.foi.air.report.modules
 
 import android.content.Context
-import android.graphics.drawable.Drawable
 import android.os.Environment
-import androidx.appcompat.content.res.AppCompatResources
-import com.example.coursecontrol.GenerateReport
-import com.example.coursecontrol.R
-import com.example.coursecontrol.model.CategoryData
-import com.example.coursecontrol.model.CourseData
+import hr.foi.air.core.GenerateReport
+import hr.foi.air.core.model.CategoryData
+import hr.foi.air.core.model.CourseData
 import java.io.File
 import java.io.FileWriter
 
@@ -76,9 +73,6 @@ class GenerateReportTxt: GenerateReport {
         return stringBuilder.toString()
     }
 
-    override fun getIcon(context: Context): Drawable {
-        return AppCompatResources.getDrawable(context, R.drawable.icon_txt_report_white)!!
-    }
 
     override fun getName(context: Context): String {
         return "Generate Txt"
